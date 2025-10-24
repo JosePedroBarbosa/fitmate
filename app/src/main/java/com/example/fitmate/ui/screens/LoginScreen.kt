@@ -44,6 +44,7 @@ fun LoginScreen(navController: NavHostController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var showErrors by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
@@ -97,6 +98,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(36.dp))
 
+            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -111,16 +113,24 @@ fun LoginScreen(navController: NavHostController) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
+                isError = showErrors && email.isBlank(),
                 shape = RoundedCornerShape(16.dp)
             )
+            if (showErrors && email.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Email is required",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
+            // Password
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -146,19 +156,29 @@ fun LoginScreen(navController: NavHostController) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
+                isError = showErrors && password.isBlank(),
                 shape = RoundedCornerShape(16.dp)
             )
+            if (showErrors && password.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Password is required",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(32.dp))
 
+            // Login Button
             Button(
                 onClick = {
+                    showErrors = true
                     if (email.isNotBlank() && password.isNotBlank()) {
+                        showErrors = false
                         isLoading = true
                         scope.launch {
                             delay(1500)
@@ -220,6 +240,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(8.dp))
 
+            // Register Redirect
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically

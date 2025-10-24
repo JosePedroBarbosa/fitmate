@@ -49,6 +49,7 @@ fun RegisterScreen(navController: NavHostController) {
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var showErrors by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -97,6 +98,7 @@ fun RegisterScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(36.dp))
 
+            // Full Name
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -110,17 +112,24 @@ fun RegisterScreen(navController: NavHostController) {
                 },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(16.dp)
+                isError = showErrors && name.isBlank(),
+                shape = RoundedCornerShape(16.dp),
             )
+            if (showErrors && name.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Full name is required",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
+            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -135,16 +144,24 @@ fun RegisterScreen(navController: NavHostController) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
+                isError = showErrors && email.isBlank(),
                 shape = RoundedCornerShape(16.dp)
             )
+            if (showErrors && email.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Email is required",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
+            // Password
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -170,16 +187,24 @@ fun RegisterScreen(navController: NavHostController) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
+                isError = showErrors && password.isBlank(),
                 shape = RoundedCornerShape(16.dp)
             )
+            if (showErrors && password.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Password is required",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
+            // Confirm Password
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
@@ -205,25 +230,57 @@ fun RegisterScreen(navController: NavHostController) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                ),
+                isError = showErrors && (confirmPassword.isBlank() || confirmPassword != password),
                 shape = RoundedCornerShape(16.dp)
             )
+            if (showErrors) {
+                Spacer(Modifier.height(4.dp))
+                when {
+                    confirmPassword.isBlank() -> {
+                        Text(
+                            "Please confirm your password",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .align(Alignment.Start)
+                                .padding(start = 8.dp)
+                        )
+                    }
+                    confirmPassword != password -> {
+                        Text(
+                            "Passwords do not match",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .align(Alignment.Start)
+                                .padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.height(32.dp))
 
+            // Register Button
             Button(
                 onClick = {
-                    if (name.isNotBlank() && email.isNotBlank() && password == confirmPassword) {
-                        isLoading = true
-                        scope.launch {
-                            delay(1500)
-                            val intent = Intent(context, MainActivity::class.java)
-                            context.startActivity(intent)
-                            (context as? Activity)?.finish()
+                    showErrors = true
+                    when {
+                        name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                            // apenas mostra erros, sem navegação
+                        }
+                        password != confirmPassword -> {
+                            // mostra erro no campo
+                        }
+                        else -> {
+                            showErrors = false
+                            isLoading = true
+                            scope.launch {
+                                delay(1500)
+                                val intent = Intent(context, MainActivity::class.java)
+                                context.startActivity(intent)
+                                (context as? Activity)?.finish()
+                            }
                         }
                     }
                 },
@@ -275,6 +332,7 @@ fun RegisterScreen(navController: NavHostController) {
 
             Spacer(Modifier.height(8.dp))
 
+            // Login Redirect
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
