@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.fitmate.ui.navigation.NavRoutes
 
-val ActiveBlue = Color(0xFF8F94FB)
+private val GoogleBlue = Color(0xFF1557B0)
 
 @Composable
 fun AppBottomBar(
@@ -28,9 +28,9 @@ fun AppBottomBar(
             icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
             label = { Text("Home") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ActiveBlue,
-                selectedTextColor = ActiveBlue,
-                indicatorColor = ActiveBlue.copy(alpha = 0.15f),
+                selectedIconColor = GoogleBlue,
+                selectedTextColor = GoogleBlue,
+                indicatorColor = GoogleBlue.copy(alpha = 0.12f),
                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -41,9 +41,9 @@ fun AppBottomBar(
             icon = { Icon(Icons.Outlined.FitnessCenter, contentDescription = "Workouts") },
             label = { Text("Workouts") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ActiveBlue,
-                selectedTextColor = ActiveBlue,
-                indicatorColor = ActiveBlue.copy(alpha = 0.15f),
+                selectedIconColor = GoogleBlue,
+                selectedTextColor = GoogleBlue,
+                indicatorColor = GoogleBlue.copy(alpha = 0.12f),
                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -54,9 +54,9 @@ fun AppBottomBar(
             icon = { Icon(Icons.Outlined.EmojiEvents, contentDescription = "Challenges") },
             label = { Text("Challenges") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ActiveBlue,
-                selectedTextColor = ActiveBlue,
-                indicatorColor = ActiveBlue.copy(alpha = 0.15f),
+                selectedIconColor = GoogleBlue,
+                selectedTextColor = GoogleBlue,
+                indicatorColor = GoogleBlue.copy(alpha = 0.12f),
                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -67,9 +67,9 @@ fun AppBottomBar(
             icon = { Icon(Icons.Outlined.Leaderboard, contentDescription = "Leaderboard") },
             label = { Text("Leaderboard") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ActiveBlue,
-                selectedTextColor = ActiveBlue,
-                indicatorColor = ActiveBlue.copy(alpha = 0.15f),
+                selectedIconColor = GoogleBlue,
+                selectedTextColor = GoogleBlue,
+                indicatorColor = GoogleBlue.copy(alpha = 0.12f),
                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )

@@ -17,11 +17,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.fitmate.ui.theme.FitmateTheme
 
 data class LeaderboardUser(
     val name: String,
@@ -175,29 +173,20 @@ fun PodiumPosition(
 
             Surface(
                 shape = CircleShape,
-                color = color.copy(alpha = 0.2f),
-                modifier = Modifier
-                    .size(if (rank == 1) 72.dp else 64.dp)
-                    .shadow(8.dp, CircleShape)
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 6.dp
             ) {
                 Box(
-                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    color.copy(alpha = 0.3f),
-                                    color.copy(alpha = 0.1f)
-                                )
-                            )
-                        )
+                        .size(56.dp)
+                        .background(Color.Transparent),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Person,
                         contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(if (rank == 1) 40.dp else 36.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
@@ -370,13 +359,5 @@ fun LeaderboardItem(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 800)
-@Composable
-private fun LeaderboardScreenPreview() {
-    FitmateTheme {
-        LeaderboardScreen()
     }
 }

@@ -1,5 +1,6 @@
 package com.example.fitmate.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -8,8 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+
+private val GoogleBlue = Color(0xFF1A73E8)
+private val GoogleBlueDark = Color(0xFF1557B0)
 
 @Composable
 fun ChallengeCard(
@@ -32,7 +38,6 @@ fun ChallengeCard(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Ícone e pontos
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -41,7 +46,7 @@ fun ChallengeCard(
                 Icon(
                     Icons.Default.EmojiEvents,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = GoogleBlue,
                     modifier = Modifier.size(28.dp)
                 )
 
@@ -50,11 +55,10 @@ fun ChallengeCard(
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = MaterialTheme.colorScheme.primary
+                    color = GoogleBlue
                 )
             }
 
-            // Título e descrição
             Column {
                 Text(
                     title,
@@ -77,14 +81,24 @@ fun ChallengeCard(
                 onClick = onAcceptClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp),
-                shape = RoundedCornerShape(10.dp)
+                    .height(42.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(GoogleBlue, GoogleBlueDark)
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                )
             ) {
                 Text(
                     text = "Accept Challenge",
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.SemiBold
-                    )
+                    ),
+                    color = Color.White
                 )
             }
         }

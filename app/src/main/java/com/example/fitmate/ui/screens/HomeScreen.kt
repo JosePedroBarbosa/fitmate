@@ -27,6 +27,9 @@ import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
 
+private val GoogleBlue = Color(0xFF1A73E8)
+private val GoogleBlueDark = Color(0xFF1557B0)
+
 @Composable
 fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
@@ -81,11 +84,6 @@ fun HomeScreen(navController: NavController) {
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
-                    "Let's crush your fitness goals today",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
             }
         }
 
@@ -106,7 +104,7 @@ fun HomeScreen(navController: NavController) {
                         unit = "steps",
                         label = "Steps Today",
                         gradient = Brush.linearGradient(
-                            colors = listOf(Color(0xFF4E54C8), Color(0xFF8F94FB))
+                            colors = listOf(GoogleBlue, GoogleBlueDark)
                         ),
                         modifier = Modifier.weight(1f)
                     )
@@ -137,7 +135,7 @@ fun HomeScreen(navController: NavController) {
                             unit = "",
                             label = "Steps",
                             gradient = Brush.linearGradient(
-                                colors = listOf(Color(0xFF4E54C8), Color(0xFF8F94FB))
+                                colors = listOf(GoogleBlue, GoogleBlueDark)
                             ),
                             modifier = Modifier.weight(1f)
                         )
@@ -230,7 +228,7 @@ fun GoalProgressCard(
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                        colors = listOf(GoogleBlue, GoogleBlueDark)
                     )
                 )
                 .padding(16.dp)
@@ -362,7 +360,7 @@ fun QuickWorkoutCard(
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53))
+                        colors = listOf(GoogleBlue, GoogleBlueDark)
                     )
                 )
                 .padding(16.dp)
@@ -435,7 +433,7 @@ fun QuickWorkoutCard(
                             Icon(
                                 imageVector = Icons.Filled.PlayArrow,
                                 contentDescription = "Start",
-                                tint = Color(0xFFFF6B6B),
+                                tint = GoogleBlue,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
