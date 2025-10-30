@@ -1,6 +1,5 @@
 package com.example.fitmate.ui.screens
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,10 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +24,7 @@ import androidx.navigation.NavController
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
+import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
 
 @Composable
@@ -53,7 +51,6 @@ fun HomeScreen(navController: NavController) {
                 .padding(bottom = 20.dp)
         ) {
             if (isLoadingUser) {
-                // Skeleton loading para o nome
                 Box(
                     modifier = Modifier
                         .width(200.dp)
@@ -447,31 +444,4 @@ fun QuickWorkoutCard(
             }
         }
     }
-}
-
-fun Modifier.shimmerEffect(): Modifier = composed {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer"
-    )
-
-    val shimmerColors = listOf(
-        Color.Transparent,
-        Color.White.copy(alpha = 0.3f),
-        Color.Transparent
-    )
-
-    background(
-        brush = Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset(translateAnim - 500f, translateAnim - 500f),
-            end = Offset(translateAnim, translateAnim)
-        )
-    )
 }
