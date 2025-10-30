@@ -19,10 +19,11 @@ fun AppNavGraph(
         startDestination = NavRoutes.HOME,
         modifier = Modifier.padding(innerPadding)
     ) {
-        composable(NavRoutes.HOME) { HomeScreen() }
+        composable(NavRoutes.HOME) { HomeScreen(navController) }
         composable(NavRoutes.WORKOUTS) { WorkoutsScreen() }
         composable(NavRoutes.CHALLENGES) { ChallengesScreen() }
         composable(NavRoutes.LEADERBOARD) { LeaderboardScreen() }
         composable(NavRoutes.PROFILE) { ProfileScreen() }
+        composable(NavRoutes.GOAL) { GoalScreen() }
     }
 }

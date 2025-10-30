@@ -2,6 +2,7 @@ package com.example.fitmate.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,12 +23,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.fitmate.data.FirebaseRepository
+import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.*
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoadingUser by remember { mutableStateOf(true) }
 
@@ -110,7 +113,16 @@ fun HomeScreen() {
                         ),
                         modifier = Modifier.weight(1f)
                     )
-                    GoalProgressCard(modifier = Modifier.weight(1f))
+                    GoalProgressCard(
+                        modifier = Modifier.weight(1f),
+                        onNavigateToGoal = {
+                            navController.navigate("goal") {
+                                popUpTo("home") { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                     QuickWorkoutCard(modifier = Modifier.weight(1f))
                 }
             } else {
@@ -132,7 +144,16 @@ fun HomeScreen() {
                             ),
                             modifier = Modifier.weight(1f)
                         )
-                        GoalProgressCard(modifier = Modifier.weight(1f))
+                        GoalProgressCard(
+                            modifier = Modifier.weight(1f),
+                            onNavigateToGoal = {
+                                navController.navigate("goal") {
+                                    popUpTo("home") { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
                     }
                     QuickWorkoutCard(modifier = Modifier.fillMaxWidth())
                 }
@@ -186,8 +207,19 @@ fun HomeScreen() {
 
 @Composable
 fun GoalProgressCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToGoal: (() -> Unit)? = null
 ) {
+    var goal by remember { mutableStateOf<Goal?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.fetchUserGoal { fetchedGoal ->
+            goal = fetchedGoal
+            isLoading = false
+        }
+    }
+
     Surface(
         modifier = modifier
             .height(140.dp)
@@ -206,63 +238,110 @@ fun GoalProgressCard(
                 )
                 .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.TrackChanges,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Text(
-                        "65%",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    )
-                }
-
-                Column {
-                    Text(
-                        "Personal Goal",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.White.copy(alpha = 0.95f),
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                    Spacer(Modifier.height(6.dp))
-
+            when {
+                isLoading -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(10.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.25f))
+                            .height(20.dp)
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                }
+
+                goal == null -> {
+                    // ⚡ Caso não haja goal ativo
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { onNavigateToGoal?.invoke() },
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.65f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(Color.White)
+                        Icon(
+                            imageVector = Icons.Outlined.Flag,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Set your goal",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Tap to create one",
+                            color = Color.White.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
+                }
 
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "Goal Type",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    )
+                else -> {
+                    val progress = goal!!.progress.coerceIn(0, 100)
+                    val typeLabel = goal!!.type.label
+
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.TrackChanges,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.9f),
+                                modifier = Modifier.size(26.dp)
+                            )
+                            Text(
+                                "$progress%",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                "Personal Goal",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = Color.White.copy(alpha = 0.95f),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            Spacer(Modifier.height(6.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.White.copy(alpha = 0.25f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(progress / 100f)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(50))
+                                        .background(Color.White)
+                                )
+                            }
+
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                typeLabel,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }

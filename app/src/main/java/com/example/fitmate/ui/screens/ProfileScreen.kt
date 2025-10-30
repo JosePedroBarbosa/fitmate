@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.fitmate.data.FirebaseRepository
+import com.example.fitmate.model.FitnessLevelType
+import com.example.fitmate.model.GenderType
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.DateOfBirthPicker
 import com.google.firebase.auth.FirebaseAuth
@@ -55,8 +57,8 @@ fun ProfileScreen() {
                 height = it.height?.toString() ?: ""
                 weight = it.weight?.toString() ?: ""
                 dateOfBirth = it.dateOfBirth ?: ""
-                gender = it.gender ?: ""
-                fitnessLevel = it.fitnessLevel ?: ""
+                gender = it.gender?.label ?: ""
+                fitnessLevel = it.fitnessLevel?.label ?: ""
             } ?: run {
                 name = auth.currentUser?.displayName ?: "Unknown"
                 height = ""
@@ -120,6 +122,43 @@ fun ProfileScreen() {
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(60.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                    ),
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxWidth()
+                        .height(70.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "${userProfile?.points ?: 0} Points",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         )
                     }
                 }
@@ -191,10 +230,10 @@ fun ProfileScreen() {
                             name = name,
                             email = userProfile?.email ?: auth.currentUser?.email ?: "",
                             height = height.toIntOrNull(),
-                            weight = weight.toIntOrNull(),
+                            weight = weight.toDoubleOrNull(),
                             dateOfBirth = dateOfBirth,
-                            gender = gender,
-                            fitnessLevel = fitnessLevel
+                            gender = GenderType.fromLabel(gender),
+                            fitnessLevel = FitnessLevelType.fromLabel(fitnessLevel),
                         )
 
                         FirebaseRepository.updateUserProfile(updatedProfile) { success ->
@@ -318,7 +357,7 @@ fun GenderDropdown(
     enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("Male", "Female", "Other")
+    val options = GenderType.entries.map { it.label }
 
     Box(
         modifier = Modifier
@@ -384,12 +423,9 @@ fun FitnessLevelDropdown(
     enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val levels = listOf("Beginner", "Intermediate", "Expert")
+    val levels = FitnessLevelType.entries.map { it.label }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = selectedLevel,
             onValueChange = {},
@@ -404,7 +440,10 @@ fun FitnessLevelDropdown(
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
-                        imageVector = if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
+                        imageVector = if (expanded)
+                            Icons.Outlined.KeyboardArrowUp
+                        else
+                            Icons.Outlined.KeyboardArrowDown,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -427,8 +466,7 @@ fun FitnessLevelDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             levels.forEach { level ->
                 DropdownMenuItem(

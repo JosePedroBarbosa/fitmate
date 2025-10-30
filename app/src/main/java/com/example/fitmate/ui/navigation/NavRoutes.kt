@@ -6,4 +6,5 @@ object NavRoutes {
     const val CHALLENGES = "challenges"
     const val LEADERBOARD = "leaderboard"
     const val PROFILE = "profile"
+    const val GOAL = "goal"
 }
