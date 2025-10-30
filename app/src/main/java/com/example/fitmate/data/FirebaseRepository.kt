@@ -1,6 +1,12 @@
 package com.example.fitmate.data
 
+import com.example.fitmate.model.FitnessLevelType
+import com.example.fitmate.model.GenderType
 import com.example.fitmate.model.UserProfile
+import com.example.fitmate.model.WeightLossGoal
+import com.example.fitmate.model.GoalType
+import com.example.fitmate.model.MuscleGainGoal
+import com.example.fitmate.model.Goal
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
@@ -66,26 +72,125 @@ object FirebaseRepository {
 
     fun fetchUserProfile(onResult: (UserProfile?) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onResult(null)
+
         database.child("users").child(uid).get()
             .addOnSuccessListener { snapshot ->
-                val userProfile = snapshot.getValue(UserProfile::class.java)
-                onResult(userProfile)
+                if (snapshot.exists()) {
+                    val uidValue = snapshot.child("uid").getValue(String::class.java) ?: ""
+                    val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                    val email = snapshot.child("email").getValue(String::class.java) ?: ""
+                    val points = snapshot.child("points").getValue(Int::class.java) ?: 0
+                    val height = snapshot.child("height").getValue(Int::class.java)
+                    val weight = snapshot.child("weight").getValue(Double::class.java)
+                    val dateOfBirth = snapshot.child("dateOfBirth").getValue(String::class.java)
+                    val genderStr = snapshot.child("gender").getValue(String::class.java)
+                    val fitnessStr = snapshot.child("fitnessLevel").getValue(String::class.java)
+
+                    val userProfile = UserProfile(
+                        uid = uidValue,
+                        name = name,
+                        email = email,
+                        points = points,
+                        height = height,
+                        weight = weight,
+                        dateOfBirth = dateOfBirth,
+                        gender = genderStr?.let { GenderType.fromLabel(it) },
+                        fitnessLevel = fitnessStr?.let { FitnessLevelType.fromLabel(it) }
+                    )
+                    onResult(userProfile)
+                } else {
+                    onResult(null)
+                }
             }
-            .addOnFailureListener { _ ->
+            .addOnFailureListener {
                 onResult(null)
             }
     }
 
     fun updateUserProfile(userProfile: UserProfile, onComplete: (Boolean) -> Unit) {
-        val uid = auth.currentUser?.uid
+        val uid = auth.currentUser?.uid ?: return onComplete(false)
 
-        if (uid == null) {
-            onComplete(false)
-            return
-        }
+        val map = mapOf(
+            "uid" to userProfile.uid,
+            "name" to userProfile.name,
+            "email" to userProfile.email,
+            "points" to userProfile.points,
+            "height" to userProfile.height,
+            "weight" to userProfile.weight,
+            "dateOfBirth" to userProfile.dateOfBirth,
+            "gender" to userProfile.gender?.label,
+            "fitnessLevel" to userProfile.fitnessLevel?.label
+        )
 
-        database.child("users").child(uid).setValue(userProfile)
+        database.child("users").child(uid).setValue(map)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
+    }
+
+    fun updateUserGoal(goal: Goal, onComplete: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onComplete(false)
+
+        val goalMap = when (goal) {
+            is WeightLossGoal -> mapOf(
+                "type" to goal.type.name,
+                "createdAt" to goal.createdAt,
+                "progress" to goal.progress,
+                "initialWeight" to goal.initialWeight,
+                "currentWeight" to goal.currentWeight,
+                "targetWeight" to goal.targetWeight
+            )
+            is MuscleGainGoal -> mapOf(
+                "type" to goal.type.name,
+                "createdAt" to goal.createdAt,
+                "progress" to goal.progress,
+                "initialMuscleMassPercent" to goal.initialMuscleMassPercent,
+                "currentMuscleMassPercent" to goal.currentMuscleMassPercent,
+                "targetMuscleMassPercent" to goal.targetMuscleMassPercent
+            )
+        }
+
+        database.child("users").child(uid).child("goal").setValue(goalMap)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun fetchUserGoal(onResult: (Goal?) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onResult(null)
+
+        database.child("users").child(uid).child("goal").get()
+            .addOnSuccessListener { snapshot ->
+                if (!snapshot.exists()) {
+                    onResult(null)
+                    return@addOnSuccessListener
+                }
+
+                val typeStr = snapshot.child("type").getValue(String::class.java)
+                val type = typeStr?.let { GoalType.valueOf(it) }
+
+                val goal = when (type) {
+                    GoalType.WEIGHT_LOSS -> WeightLossGoal(
+                        createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: 0L,
+                        progress = snapshot.child("progress").getValue(Int::class.java) ?: 0,
+                        initialWeight = snapshot.child("initialWeight").getValue(Double::class.java) ?: 0.0,
+                        currentWeight = snapshot.child("currentWeight").getValue(Double::class.java) ?: 0.0,
+                        targetWeight = snapshot.child("targetWeight").getValue(Double::class.java) ?: 0.0
+                    )
+
+                    GoalType.MUSCLE_GAIN -> MuscleGainGoal(
+                        createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: 0L,
+                        progress = snapshot.child("progress").getValue(Int::class.java) ?: 0,
+                        initialMuscleMassPercent = snapshot.child("initialMuscleMassPercent").getValue(Double::class.java) ?: 0.0,
+                        currentMuscleMassPercent = snapshot.child("currentMuscleMassPercent").getValue(Double::class.java) ?: 0.0,
+                        targetMuscleMassPercent = snapshot.child("targetMuscleMassPercent").getValue(Double::class.java) ?: 0.0
+                    )
+
+                    else -> null
+                }
+
+                onResult(goal)
+            }
+            .addOnFailureListener {
+                onResult(null)
+            }
     }
 }

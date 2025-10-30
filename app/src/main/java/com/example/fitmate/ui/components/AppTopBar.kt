@@ -255,7 +255,14 @@ fun ModernRightDrawer(
                         restoreState = true
                     }
                 }
-                DrawerMenuItem(Icons.Outlined.EmojiEvents, "Goal") { /* TODO */ }
+                DrawerMenuItem(Icons.Outlined.EmojiEvents, "Goal") {
+                    onDismiss()
+                    navController.navigate(NavRoutes.GOAL) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
                 DrawerMenuItem(Icons.Outlined.FitnessCenter, "Workouts") { /* TODO */ }
                 DrawerMenuItem(Icons.Outlined.LocalFireDepartment, "Activity Stats") { /* TODO */ }
                 DrawerMenuItem(Icons.Outlined.Settings, "Settings") { /* TODO */ }
