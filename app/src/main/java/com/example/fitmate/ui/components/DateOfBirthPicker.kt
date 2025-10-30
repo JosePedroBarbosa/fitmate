@@ -1,35 +1,29 @@
 package com.example.fitmate.ui.components
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateOfBirthPicker(
     selectedDate: String,
     onDateSelected: (String) -> Unit,
     enabled: Boolean = true
 ) {
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
+    var showDialog by remember { mutableStateOf(false) }
 
-    // Mostrar data atual, se já existir
     val dateText = remember(selectedDate) {
         if (selectedDate.isNotEmpty()) selectedDate else ""
     }
@@ -46,22 +40,7 @@ fun DateOfBirthPicker(
             )
         },
         trailingIcon = {
-            IconButton(onClick = {
-                if (enabled) {
-                    val datePicker = DatePickerDialog(
-                        context,
-                        { _, year, month, dayOfMonth ->
-                            val formattedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
-                            onDateSelected(formattedDate)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    )
-                    datePicker.datePicker.maxDate = System.currentTimeMillis()
-                    datePicker.show()
-                }
-            }) {
+            IconButton(onClick = { if (enabled) showDialog = true }) {
                 Icon(
                     imageVector = Icons.Outlined.KeyboardArrowDown,
                     contentDescription = null,
@@ -79,20 +58,67 @@ fun DateOfBirthPicker(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) {
-                val datePicker = DatePickerDialog(
-                    context,
-                    { _, year, month, dayOfMonth ->
-                        val formattedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
-                        onDateSelected(formattedDate)
-                    },
-                    calendar.get(Calendar.YEAR),
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH)
-                )
-                datePicker.datePicker.maxDate = System.currentTimeMillis()
-                datePicker.show()
-            },
+            .clickable(enabled = enabled) { showDialog = true },
         singleLine = true
     )
+
+    if (showDialog) {
+        val calendar = Calendar.getInstance()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = runCatching {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)?.time
+            }.getOrNull() ?: calendar.timeInMillis
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatted = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(millis))
+                        onDateSelected(formatted)
+                    }
+                    showDialog = false
+                }) {
+                    Text(
+                        text = "OK",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Select Date of Birth",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Divider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                DatePicker(
+                    state = datePickerState,
+                    showModeToggle = false,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+    }
 }

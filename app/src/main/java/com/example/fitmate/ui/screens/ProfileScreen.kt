@@ -34,6 +34,9 @@ import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.delay
 import com.example.fitmate.ui.components.shimmerEffect
 
+private val GoogleBlue = Color(0xFF1A73E8)
+private val GoogleBlueDark = Color(0xFF1557B0)
+
 @Composable
 fun ProfileScreen() {
     val auth = FirebaseAuth.getInstance()
@@ -243,30 +246,25 @@ fun ProfileScreen() {
 
                         Spacer(Modifier.height(16.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            ProfileTextField(
-                                value = height,
-                                onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) height = it },
-                                label = "Height (cm)",
-                                icon = Icons.Outlined.Height,
-                                keyboardType = KeyboardType.Number,
-                                enabled = !isSaving,
-                                modifier = Modifier.weight(1f)
-                            )
+                        ProfileTextField(
+                            value = height,
+                            onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) height = it },
+                            label = "Height (cm)",
+                            icon = Icons.Outlined.Height,
+                            keyboardType = KeyboardType.Number,
+                            enabled = !isSaving
+                        )
 
-                            ProfileTextField(
-                                value = weight,
-                                onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) weight = it },
-                                label = "Weight (kg)",
-                                icon = Icons.Outlined.MonitorWeight,
-                                keyboardType = KeyboardType.Number,
-                                enabled = !isSaving,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        Spacer(Modifier.height(16.dp))
+
+                        ProfileTextField(
+                            value = weight,
+                            onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) weight = it },
+                            label = "Weight (kg)",
+                            icon = Icons.Outlined.MonitorWeight,
+                            keyboardType = KeyboardType.Number,
+                            enabled = !isSaving
+                        )
 
                         Spacer(Modifier.height(16.dp))
 
@@ -333,32 +331,45 @@ fun ProfileScreen() {
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isSaving && name.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Save,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(GoogleBlue, GoogleBlueDark)
+                                ),
+                                RoundedCornerShape(16.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
                             )
-                            Text(
-                                "Save Changes",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Save,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                            )
+                                Text(
+                                    "Save Changes",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White
+                                    )
+                                )
+                            }
                         }
                     }
                 }

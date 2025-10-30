@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
@@ -34,8 +33,10 @@ import androidx.navigation.NavHostController
 import com.example.fitmate.R
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.ui.activities.MainActivity
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private val GoogleBlue = Color(0xFF1A73E8)
+private val GoogleBlueDark = Color(0xFF1557B0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,19 +62,19 @@ fun RegisterScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(
+                        listOf(
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
                             MaterialTheme.colorScheme.background
                         )
                     )
-                ),
+                )
+                .padding(padding),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
-                    .wrapContentSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -87,97 +88,68 @@ fun RegisterScreen(navController: NavHostController) {
 
                 Text(
                     "Create Account",
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center
                 )
-
-                Spacer(Modifier.height(8.dp))
 
                 Text(
                     "Start your fitness journey with FitMate!",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
                 )
 
-                Spacer(Modifier.height(36.dp))
-
-                // Full Name
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Full Name") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Outlined.Person, null) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
                     isError = showErrors && name.isBlank(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
                 )
                 if (showErrors && name.isBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Full name is required",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 8.dp)
-                    )
+                    ErrorText("Full name is required")
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                // Email
+                // ✉️ Email
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Outlined.Email, null) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     isError = showErrors && email.isBlank(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
                 )
                 if (showErrors && email.isBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Email is required",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 8.dp)
-                    )
+                    ErrorText("Email is required")
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                // Password
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Outlined.Lock, null) },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
@@ -185,42 +157,31 @@ fun RegisterScreen(navController: NavHostController) {
                                     Icons.Outlined.Visibility
                                 else
                                     Icons.Outlined.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                contentDescription = null
                             )
                         }
                     },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     isError = showErrors && password.isBlank(),
-                    shape = RoundedCornerShape(16.dp)
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
                 )
                 if (showErrors && password.isBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Password is required",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 8.dp)
-                    )
+                    ErrorText("Password is required")
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                // Confirm Password
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = { Text("Confirm Password") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
+                    leadingIcon = { Icon(Icons.Outlined.Lock, null) },
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
@@ -228,45 +189,29 @@ fun RegisterScreen(navController: NavHostController) {
                                     Icons.Outlined.Visibility
                                 else
                                     Icons.Outlined.VisibilityOff,
-                                contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                                contentDescription = null
                             )
                         }
                     },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     isError = showErrors && (confirmPassword.isBlank() || confirmPassword != password),
-                    shape = RoundedCornerShape(16.dp)
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
                 )
                 if (showErrors) {
-                    Spacer(Modifier.height(4.dp))
                     when {
-                        confirmPassword.isBlank() -> {
-                            Text(
-                                "Please confirm your password",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .align(Alignment.Start)
-                                    .padding(start = 8.dp)
-                            )
-                        }
-                        confirmPassword != password -> {
-                            Text(
-                                "Passwords do not match",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .align(Alignment.Start)
-                                    .padding(start = 8.dp)
-                            )
-                        }
+                        confirmPassword.isBlank() -> ErrorText("Please confirm your password")
+                        confirmPassword != password -> ErrorText("Passwords do not match")
                     }
                 }
 
                 Spacer(Modifier.height(32.dp))
 
-                // Register Button
                 Button(
                     onClick = {
                         showErrors = true
@@ -288,9 +233,7 @@ fun RegisterScreen(navController: NavHostController) {
                                     },
                                     onFailure = { error ->
                                         isLoading = false
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(error)
-                                        }
+                                        scope.launch { snackbarHostState.showSnackbar(error) }
                                     }
                                 )
                             }
@@ -300,7 +243,10 @@ fun RegisterScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.White
+                    ),
                     contentPadding = PaddingValues(0.dp),
                     enabled = !isLoading
                 ) {
@@ -309,45 +255,36 @@ fun RegisterScreen(navController: NavHostController) {
                             .fillMaxSize()
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF4E54C8), Color(0xFF8F94FB))
-                                )
+                                    listOf(GoogleBlue, GoogleBlueDark)
+                                ),
+                                shape = RoundedCornerShape(16.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
                                 color = Color.White,
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 3.dp
+                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(24.dp)
                             )
                         } else {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "Register",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = Color.White
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    tint = Color.White
-                                )
-                            }
+                            Text(
+                                "Register",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White
+                            )
                         }
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // Login Redirect
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         "Already have an account?",
@@ -357,12 +294,26 @@ fun RegisterScreen(navController: NavHostController) {
                     TextButton(onClick = { navController.popBackStack() }) {
                         Text(
                             "Login",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            )
                         )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ErrorText(message: String) {
+    Text(
+        text = message,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodySmall,
+        textAlign = TextAlign.Start,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 8.dp, top = 4.dp)
+    )
 }
