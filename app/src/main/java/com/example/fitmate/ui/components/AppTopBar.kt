@@ -3,7 +3,7 @@ package com.example.fitmate.ui.components
 import android.app.Activity
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -22,7 +22,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -31,11 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.example.fitmate.R
+import com.example.fitmate.data.FirebaseRepository
+import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.activities.AuthActivity
+import com.example.fitmate.ui.navigation.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppTopBar() {
+fun AppTopBar(navController: androidx.navigation.NavHostController) {
     var isDrawerOpen by remember { mutableStateOf(false) }
 
     Surface(
@@ -130,7 +136,10 @@ fun AppTopBar() {
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                 ) {
-                    ModernRightDrawer(onDismiss = { isDrawerOpen = false })
+                    ModernRightDrawer(
+                        onDismiss = { isDrawerOpen = false },
+                        navController = navController
+                    )
                 }
             }
         }
@@ -139,9 +148,19 @@ fun AppTopBar() {
 
 @Composable
 fun ModernRightDrawer(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    navController: androidx.navigation.NavHostController
 ) {
     val context = LocalContext.current
+    var userProfile by remember { mutableStateOf<UserProfile?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.fetchUserProfile { profile ->
+            userProfile = profile
+            isLoading = false
+        }
+    }
 
     Surface(
         modifier = Modifier
@@ -157,7 +176,6 @@ fun ModernRightDrawer(
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
-            // Header do perfil
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -181,16 +199,42 @@ fun ModernRightDrawer(
 
                 Spacer(Modifier.height(16.dp))
 
-                Text(
-                    text = "John Doe",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "john.doe@fitmate.com",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+                if (isLoading) {
+                    // Skeleton loading para o nome
+                    Box(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .height(28.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .shimmerEffect()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    // Skeleton loading para o email
+                    Box(
+                        modifier = Modifier
+                            .width(180.dp)
+                            .height(20.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .shimmerEffect()
+                    )
+                } else {
+                    Text(
+                        text = userProfile?.name ?: "Unknown User",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = userProfile?.email ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             HorizontalDivider(
@@ -203,10 +247,17 @@ fun ModernRightDrawer(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                DrawerMenuItem(Icons.Outlined.Person, "Profile") { /* TODO */ }
+                DrawerMenuItem(Icons.Outlined.Person, "Profile") {
+                    onDismiss()
+                    navController.navigate(NavRoutes.PROFILE) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+                DrawerMenuItem(Icons.Outlined.EmojiEvents, "Goal") { /* TODO */ }
                 DrawerMenuItem(Icons.Outlined.FitnessCenter, "Workouts") { /* TODO */ }
                 DrawerMenuItem(Icons.Outlined.LocalFireDepartment, "Activity Stats") { /* TODO */ }
-                DrawerMenuItem(Icons.Outlined.EmojiEvents, "Achievements") { /* TODO */ }
                 DrawerMenuItem(Icons.Outlined.Settings, "Settings") { /* TODO */ }
             }
 
@@ -217,6 +268,7 @@ fun ModernRightDrawer(
 
             Surface(
                 onClick = {
+                    FirebaseRepository.logout()
                     val intent = Intent(context, AuthActivity::class.java)
                     context.startActivity(intent)
                     (context as? Activity)?.finish()
@@ -279,4 +331,31 @@ fun DrawerMenuItem(
             )
         }
     }
+}
+
+fun Modifier.shimmerEffect(): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+
+    val shimmerColors = listOf(
+        Color.Transparent,
+        Color.White.copy(alpha = 0.3f),
+        Color.Transparent
+    )
+
+    background(
+        brush = Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset(translateAnim - 500f, translateAnim - 500f),
+            end = Offset(translateAnim, translateAnim)
+        )
+    )
 }

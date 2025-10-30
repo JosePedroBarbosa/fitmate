@@ -1,5 +1,6 @@
 package com.example.fitmate.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,43 +11,82 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.fitmate.data.FirebaseRepository
+import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.*
 
 @Composable
 fun HomeScreen() {
+    var userProfile by remember { mutableStateOf<UserProfile?>(null) }
+    var isLoadingUser by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.fetchUserProfile { profile ->
+            userProfile = profile
+            isLoadingUser = false
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
-        // Welcome Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 20.dp)
         ) {
-            Text(
-                "Welcome, User! 👋",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                "Let's crush your fitness goals today",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-            )
+            if (isLoadingUser) {
+                // Skeleton loading para o nome
+                Box(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(32.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .shimmerEffect()
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .width(250.dp)
+                        .height(24.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .shimmerEffect()
+                )
+            } else {
+                val firstName = userProfile?.name?.split(" ")?.firstOrNull() ?: "User"
+                Text(
+                    "Welcome, $firstName! 👋",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    "Let's crush your fitness goals today",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+            }
         }
 
         BoxWithConstraints(
@@ -101,7 +141,6 @@ fun HomeScreen() {
 
         Spacer(Modifier.height(32.dp))
 
-        // Challenges Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -329,4 +368,31 @@ fun QuickWorkoutCard(
             }
         }
     }
+}
+
+fun Modifier.shimmerEffect(): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+
+    val shimmerColors = listOf(
+        Color.Transparent,
+        Color.White.copy(alpha = 0.3f),
+        Color.Transparent
+    )
+
+    background(
+        brush = Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset(translateAnim - 500f, translateAnim - 500f),
+            end = Offset(translateAnim, translateAnim)
+        )
+    )
 }

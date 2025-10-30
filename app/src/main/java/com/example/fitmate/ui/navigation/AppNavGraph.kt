@@ -23,5 +23,6 @@ fun AppNavGraph(
         composable(NavRoutes.WORKOUTS) { WorkoutsScreen() }
         composable(NavRoutes.CHALLENGES) { ChallengesScreen() }
         composable(NavRoutes.LEADERBOARD) { LeaderboardScreen() }
+        composable(NavRoutes.PROFILE) { ProfileScreen() }
     }
 }

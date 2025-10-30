@@ -5,4 +5,5 @@ object NavRoutes {
     const val WORKOUTS = "workouts"
     const val CHALLENGES = "challenges"
     const val LEADERBOARD = "leaderboard"
+    const val PROFILE = "profile"
 }

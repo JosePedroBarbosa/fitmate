@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "902603296669",
+    "project_id": "fitmate-8ad03",
+    "storage_bucket": "fitmate-8ad03.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902603296669:android:6dea768e2bfbfee56a2974",
+        "android_client_info": {
+          "package_name": "com.example.fitmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIVR7-COgDNoKagkhEM4Z7QSWKHyNwDM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
