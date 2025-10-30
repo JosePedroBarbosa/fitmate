@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,18 +21,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.fitmate.R
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.activities.AuthActivity
@@ -49,18 +43,26 @@ fun AppTopBar(navController: androidx.navigation.NavHostController) {
         color = MaterialTheme.colorScheme.surface
     ) {
         TopAppBar(
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 8.dp)
+            navigationIcon = {
+                IconButton(
+                    onClick = { isDrawerOpen = true },
+                    modifier = Modifier.padding(start = 4.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.fitmate_logo),
-                        contentDescription = "FitMate logo",
-                        modifier = Modifier.height(96.dp)
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
             },
+            title = {},
             actions = {
                 IconButton(onClick = { /* TODO: abrir notificações */ }) {
                     BadgedBox(badge = {
@@ -73,24 +75,6 @@ fun AppTopBar(navController: androidx.navigation.NavHostController) {
                             imageVector = Icons.Outlined.Notifications,
                             contentDescription = "Notifications",
                             tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-                Spacer(Modifier.width(4.dp))
-                IconButton(
-                    onClick = { isDrawerOpen = true },
-                    modifier = Modifier.padding(end = 4.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = "Profile",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(8.dp)
                         )
                     }
                 }
@@ -131,10 +115,10 @@ fun AppTopBar(navController: androidx.navigation.NavHostController) {
 
                 AnimatedVisibility(
                     visible = true,
-                    enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)),
-                    exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)),
+                    enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)),
+                    exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)),
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
+                        .align(Alignment.CenterStart)
                 ) {
                     ModernRightDrawer(
                         onDismiss = { isDrawerOpen = false },
@@ -166,8 +150,8 @@ fun ModernRightDrawer(
         modifier = Modifier
             .fillMaxHeight()
             .width(320.dp)
-            .shadow(16.dp, RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp)),
-        shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
+            .shadow(16.dp, RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)),
+        shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
     ) {
@@ -200,7 +184,6 @@ fun ModernRightDrawer(
                 Spacer(Modifier.height(16.dp))
 
                 if (isLoading) {
-                    // Skeleton loading para o nome
                     Box(
                         modifier = Modifier
                             .width(150.dp)
@@ -212,7 +195,6 @@ fun ModernRightDrawer(
                             .shimmerEffect()
                     )
                     Spacer(Modifier.height(8.dp))
-                    // Skeleton loading para o email
                     Box(
                         modifier = Modifier
                             .width(180.dp)
@@ -263,9 +245,7 @@ fun ModernRightDrawer(
                         restoreState = true
                     }
                 }
-                DrawerMenuItem(Icons.Outlined.FitnessCenter, "Workouts") { /* TODO */ }
-                DrawerMenuItem(Icons.Outlined.LocalFireDepartment, "Activity Stats") { /* TODO */ }
-                DrawerMenuItem(Icons.Outlined.Settings, "Settings") { /* TODO */ }
+                DrawerMenuItem(Icons.Outlined.LocationOn, "Find Gym") { /* TODO */ }
             }
 
             HorizontalDivider(
@@ -338,31 +318,4 @@ fun DrawerMenuItem(
             )
         }
     }
-}
-
-fun Modifier.shimmerEffect(): Modifier = composed {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer"
-    )
-
-    val shimmerColors = listOf(
-        Color.Transparent,
-        Color.White.copy(alpha = 0.3f),
-        Color.Transparent
-    )
-
-    background(
-        brush = Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset(translateAnim - 500f, translateAnim - 500f),
-            end = Offset(translateAnim, translateAnim)
-        )
-    )
 }

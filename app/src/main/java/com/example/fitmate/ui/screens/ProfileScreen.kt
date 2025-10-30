@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,6 +32,7 @@ import com.example.fitmate.ui.components.DateOfBirthPicker
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.delay
+import com.example.fitmate.ui.components.shimmerEffect
 
 @Composable
 fun ProfileScreen() {
@@ -83,19 +85,25 @@ fun ProfileScreen() {
                 Box(
                     modifier = Modifier
                         .size(120.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            CircleShape
+                        )
                         .shimmerEffect()
                 )
                 Spacer(Modifier.height(24.dp))
-                repeat(4) {
+                repeat(5) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(80.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                            .height(70.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                RoundedCornerShape(16.dp)
+                            )
                             .shimmerEffect()
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
             }
         } else {
@@ -106,120 +114,187 @@ fun ProfileScreen() {
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(10.dp))
-
-                // Avatar
+                // Points Card with Gradient
                 Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier
-                        .size(120.dp)
-                        .shadow(8.dp, CircleShape)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(60.dp)
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
                         .fillMaxWidth()
-                        .height(70.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                        .shadow(6.dp, RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(30.dp)
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = "${userProfile?.points ?: 0} Points",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            .fillMaxWidth()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(Color(0xFFFFA726), Color(0xFFFF7043))
+                                )
                             )
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color.White.copy(alpha = 0.25f),
+                                    modifier = Modifier.size(50.dp)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Star,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+
+                                Column {
+                                    Text(
+                                        "${userProfile?.points ?: 0}",
+                                        style = MaterialTheme.typography.headlineSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    )
+                                    Text(
+                                        "Total Points",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = Color.White.copy(alpha = 0.9f)
+                                        )
+                                    )
+                                }
+                            }
+
+                            Icon(
+                                imageVector = Icons.Filled.EmojiEvents,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.3f),
+                                modifier = Modifier.size(60.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Personal Information Section
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 2.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(bottom = 20.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AccountCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                "Personal Information",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+
+                        ProfileTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = "Full Name",
+                            icon = Icons.Outlined.Person,
+                            enabled = !isSaving
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            ProfileTextField(
+                                value = height,
+                                onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) height = it },
+                                label = "Height (cm)",
+                                icon = Icons.Outlined.Height,
+                                keyboardType = KeyboardType.Number,
+                                enabled = !isSaving,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            ProfileTextField(
+                                value = weight,
+                                onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) weight = it },
+                                label = "Weight (kg)",
+                                icon = Icons.Outlined.MonitorWeight,
+                                keyboardType = KeyboardType.Number,
+                                enabled = !isSaving,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        DateOfBirthPicker(
+                            selectedDate = dateOfBirth,
+                            onDateSelected = { dateOfBirth = it },
+                            enabled = !isSaving
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        GenderDropdown(
+                            selectedGender = gender,
+                            onGenderSelected = { gender = it },
+                            enabled = !isSaving
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        FitnessLevelDropdown(
+                            selectedLevel = fitnessLevel,
+                            onLevelSelected = { fitnessLevel = it },
+                            enabled = !isSaving
                         )
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-
-                ProfileTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Full Name",
-                    icon = Icons.Outlined.Person,
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                ProfileTextField(
-                    value = height,
-                    onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) height = it },
-                    label = "Height (cm)",
-                    icon = Icons.Outlined.Height,
-                    keyboardType = KeyboardType.Number,
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                ProfileTextField(
-                    value = weight,
-                    onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) weight = it },
-                    label = "Weight (kg)",
-                    icon = Icons.Outlined.MonitorWeight,
-                    keyboardType = KeyboardType.Number,
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                DateOfBirthPicker(
-                    selectedDate = dateOfBirth,
-                    onDateSelected = { dateOfBirth = it },
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                GenderDropdown(
-                    selectedGender = gender,
-                    onGenderSelected = { gender = it },
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                FitnessLevelDropdown(
-                    selectedLevel = fitnessLevel,
-                    onLevelSelected = { fitnessLevel = it },
-                    enabled = !isSaving
-                )
-
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(24.dp))
 
                 Button(
                     onClick = {
@@ -257,7 +332,10 @@ fun ProfileScreen() {
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = !isSaving && name.isNotBlank()
+                    enabled = !isSaving && name.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     if (isSaving) {
                         CircularProgressIndicator(
@@ -266,18 +344,30 @@ fun ProfileScreen() {
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Save, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Save Changes", fontWeight = FontWeight.SemiBold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                "Save Changes",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
                         }
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(24.dp))
             }
         }
 
+        // Success Message
         AnimatedVisibility(
             visible = showSuccessMessage,
             enter = fadeIn(),
@@ -286,10 +376,30 @@ fun ProfileScreen() {
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
         ) {
-            Snackbar(
-                containerColor = Color(0xFF4CAF50),
-                contentColor = Color.White
-            ) { Text("Profile updated successfully!") }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF4CAF50),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Profile updated successfully!",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
 
             LaunchedEffect(Unit) {
                 delay(2500)
@@ -297,6 +407,7 @@ fun ProfileScreen() {
             }
         }
 
+        // Error Message
         AnimatedVisibility(
             visible = showErrorMessage,
             enter = fadeIn(),
@@ -305,10 +416,30 @@ fun ProfileScreen() {
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
         ) {
-            Snackbar(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = Color.White
-            ) { Text("Failed to update profile.") }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.error,
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Failed to update profile",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
 
             LaunchedEffect(Unit) {
                 delay(2500)
@@ -325,7 +456,8 @@ fun ProfileTextField(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     keyboardType: KeyboardType = KeyboardType.Text,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
         value = value,
@@ -334,11 +466,10 @@ fun ProfileTextField(
         leadingIcon = {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                contentDescription = null
             )
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -350,6 +481,7 @@ fun ProfileTextField(
         singleLine = true
     )
 }
+
 @Composable
 fun GenderDropdown(
     selectedGender: String,
@@ -359,10 +491,7 @@ fun GenderDropdown(
     var expanded by remember { mutableStateOf(false) }
     val options = GenderType.entries.map { it.label }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = selectedGender,
             onValueChange = {},
@@ -370,16 +499,17 @@ fun GenderDropdown(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.Wc,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    contentDescription = null
                 )
             },
             trailingIcon = {
-                IconButton(onClick = { expanded = !expanded }) {
+                IconButton(onClick = { if (enabled) expanded = !expanded }) {
                     Icon(
-                        imageVector = if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = if (expanded)
+                            Icons.Outlined.KeyboardArrowUp
+                        else
+                            Icons.Outlined.KeyboardArrowDown,
+                        contentDescription = null
                     )
                 }
             },
@@ -400,12 +530,28 @@ fun GenderDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = when (option) {
+                                    "Male" -> Icons.Outlined.Male
+                                    "Female" -> Icons.Outlined.Female
+                                    else -> Icons.Outlined.Wc
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(option)
+                        }
+                    },
                     onClick = {
                         onGenderSelected(option)
                         expanded = false
@@ -433,19 +579,17 @@ fun FitnessLevelDropdown(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.FitnessCenter,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    contentDescription = null
                 )
             },
             trailingIcon = {
-                IconButton(onClick = { expanded = !expanded }) {
+                IconButton(onClick = { if (enabled) expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded)
                             Icons.Outlined.KeyboardArrowUp
                         else
                             Icons.Outlined.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = null
                     )
                 }
             },
@@ -466,11 +610,29 @@ fun FitnessLevelDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             levels.forEach { level ->
                 DropdownMenuItem(
-                    text = { Text(level) },
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = when (level) {
+                                    "Beginner" -> Icons.Outlined.SelfImprovement
+                                    "Intermediate" -> Icons.Outlined.DirectionsRun
+                                    "Advanced" -> Icons.Outlined.FitnessCenter
+                                    else -> Icons.Outlined.FitnessCenter
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(level)
+                        }
+                    },
                     onClick = {
                         onLevelSelected(level)
                         expanded = false
