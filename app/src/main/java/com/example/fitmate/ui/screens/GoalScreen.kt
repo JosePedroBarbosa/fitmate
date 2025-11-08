@@ -24,6 +24,11 @@ import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.*
 import androidx.compose.foundation.text.KeyboardOptions
 
+// 🔹 Azul temático consistente com WorkoutsScreen
+private val GoogleBlue = Color(0xFF1A73E8)
+private val GoogleBlueDark = Color(0xFF1557B0)
+private val LightBlue = Color(0xFFE8F0FE)
+
 @Composable
 fun GoalScreen() {
     var isLoading by remember { mutableStateOf(true) }
@@ -44,7 +49,7 @@ fun GoalScreen() {
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.primary,
+                color = GoogleBlue,
                 strokeWidth = 3.dp
             )
         }
@@ -67,7 +72,7 @@ fun GoalScreen() {
 
             Spacer(Modifier.height(20.dp))
 
-            // Stats Row
+            // 🔹 Stats Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -81,7 +86,7 @@ fun GoalScreen() {
                     },
                     label = "Initial",
                     gradient = Brush.linearGradient(
-                        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+                        colors = listOf(GoogleBlue, GoogleBlueDark)
                     ),
                     modifier = Modifier.weight(1f)
                 )
@@ -95,14 +100,14 @@ fun GoalScreen() {
                     },
                     label = "Target",
                     gradient = Brush.linearGradient(
-                        colors = listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53))
+                        colors = listOf(GoogleBlueDark, GoogleBlue)
                     ),
                     modifier = Modifier.weight(1f)
                 )
             }
 
         } else {
-            // Create Goal Section
+            // 🔹 Create Goal Section
             CreateGoalSection(
                 selectedGoalType = selectedGoalType,
                 initialValue = initialValue,
@@ -125,7 +130,6 @@ fun GoalScreen() {
                         )
                         else -> return@CreateGoalSection
                     }
-
 
                     FirebaseRepository.updateUserGoal(newGoal) { success ->
                         if (success) {
@@ -162,14 +166,12 @@ fun CurrentGoalCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF4E54C8), Color(0xFF8F94FB))
-                    )
+                    Brush.linearGradient(colors = listOf(GoogleBlue, GoogleBlueDark))
                 )
                 .padding(24.dp)
         ) {
             Column {
-                // 🔹 Header (Goal type + title)
+                // 🔹 Header
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -212,73 +214,45 @@ fun CurrentGoalCard(
                 Spacer(Modifier.height(32.dp))
 
                 // 🔹 Progress Info
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${goal.progress.toInt()}%",
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${goal.progress.toInt()}%",
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
-                        Text(
-                            "Completed",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Medium
-                            )
+                    )
+                    Text(
+                        "Completed",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Medium
                         )
-                    }
+                    )
                 }
 
                 Spacer(Modifier.height(24.dp))
 
                 // 🔹 Progress Bar
-                Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.25f))
+                ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
+                            .fillMaxWidth(goal.progress / 100f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.25f))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(goal.progress / 100f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(Color.White)
-                        )
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            "Keep going!",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
-                        Text(
-                            "${100 - goal.progress.toInt()}% to go",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                        )
-                    }
+                            .background(Color.White)
+                    )
                 }
 
                 Spacer(Modifier.height(24.dp))
 
-                // 🔹 Update Progress Section
+                // 🔹 Update Progress
                 if (isUpdating) {
                     OutlinedTextField(
                         value = newValue,
@@ -351,16 +325,16 @@ fun CurrentGoalCard(
                             .fillMaxWidth()
                             .height(48.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                        colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue)
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                color = Color(0xFF4E54C8),
+                                color = Color.White,
                                 strokeWidth = 2.dp,
                                 modifier = Modifier.size(20.dp)
                             )
                         } else {
-                            Text("Save Progress", color = Color(0xFF4E54C8), fontWeight = FontWeight.Bold)
+                            Text("Save Progress", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 } else {
@@ -370,11 +344,11 @@ fun CurrentGoalCard(
                             .fillMaxWidth()
                             .height(48.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                        colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue)
                     ) {
                         Text(
                             "Update Progress",
-                            color = Color(0xFF4E54C8),
+                            color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -382,16 +356,12 @@ fun CurrentGoalCard(
 
                 Spacer(Modifier.height(16.dp))
 
-                // 🔹 Conditional Button (Finish / Cancel)
                 Button(
                     onClick = {
                         isDeleting = true
                         FirebaseRepository.deleteUserGoal { success ->
                             isDeleting = false
-                            if (success) {
-                                // Remove o goal da UI
-                                onProgressUpdated(null)
-                            }
+                            if (success) onProgressUpdated(null)
                         }
                     },
                     modifier = Modifier
@@ -400,9 +370,9 @@ fun CurrentGoalCard(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (goal.progress >= 100)
-                            Color(0xFF4CAF50) // verde - terminar goal
+                            Color(0xFF4CAF50)
                         else
-                            Color(0xFFFF5252) // vermelho - cancelar goal
+                            Color(0xFFFF5252)
                     )
                 ) {
                     if (isDeleting) {
@@ -455,7 +425,6 @@ fun GoalStatCard(
                     tint = Color.White.copy(alpha = 0.9f),
                     modifier = Modifier.size(28.dp)
                 )
-
                 Column {
                     Text(
                         value,
@@ -501,78 +470,36 @@ fun CreateGoalSection(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = CircleShape, color = LightBlue, modifier = Modifier.size(48.dp)) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
                             imageVector = Icons.Filled.AddCircle,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = GoogleBlue,
                             modifier = Modifier.size(28.dp)
                         )
                     }
                 }
-
-                Text(
-                    "Create New Goal",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+                Text("Create New Goal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             }
 
             Spacer(Modifier.height(24.dp))
 
-            GoalTypeDropdown(
-                selectedType = selectedGoalType,
-                onTypeSelected = onGoalTypeSelected
-            )
-
+            GoalTypeDropdown(selectedType = selectedGoalType, onTypeSelected = onGoalTypeSelected)
             Spacer(Modifier.height(16.dp))
 
             when (selectedGoalType) {
                 GoalType.WEIGHT_LOSS -> {
-                    StyledGoalInputField(
-                        label = "Initial Weight (kg)",
-                        value = initialValue,
-                        icon = Icons.Outlined.MonitorWeight,
-                        onValueChange = onInitialValueChange
-                    )
+                    StyledGoalInputField("Initial Weight (kg)", initialValue, Icons.Outlined.MonitorWeight, onInitialValueChange)
                     Spacer(Modifier.height(12.dp))
-                    StyledGoalInputField(
-                        label = "Target Weight (kg)",
-                        value = targetValue,
-                        icon = Icons.Outlined.Flag,
-                        onValueChange = onTargetValueChange
-                    )
+                    StyledGoalInputField("Target Weight (kg)", targetValue, Icons.Outlined.Flag, onTargetValueChange)
                 }
-
                 GoalType.MUSCLE_GAIN -> {
-                    StyledGoalInputField(
-                        label = "Initial Muscle Mass (%)",
-                        value = initialValue,
-                        icon = Icons.Outlined.FitnessCenter,
-                        onValueChange = onInitialValueChange
-                    )
+                    StyledGoalInputField("Initial Muscle Mass (%)", initialValue, Icons.Outlined.FitnessCenter, onInitialValueChange)
                     Spacer(Modifier.height(12.dp))
-                    StyledGoalInputField(
-                        label = "Target Muscle Mass (%)",
-                        value = targetValue,
-                        icon = Icons.Outlined.Flag,
-                        onValueChange = onTargetValueChange
-                    )
+                    StyledGoalInputField("Target Muscle Mass (%)", targetValue, Icons.Outlined.Flag, onTargetValueChange)
                 }
-
                 else -> {}
             }
 
@@ -581,29 +508,13 @@ fun CreateGoalSection(
             Button(
                 onClick = onSaveClick,
                 enabled = selectedGoalType != null && initialValue.isNotBlank() && targetValue.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        "Save Goal",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Text("Save Goal", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = Color.White))
                 }
             }
 
@@ -614,23 +525,9 @@ fun CreateGoalSection(
                     color = Color(0xFF4CAF50).copy(alpha = 0.1f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF4CAF50),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            "Goal saved successfully!",
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Medium,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                        Text("Goal saved successfully!", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -639,61 +536,40 @@ fun CreateGoalSection(
 }
 
 @Composable
-fun GoalTypeDropdown(
-    selectedType: GoalType?,
-    onTypeSelected: (GoalType) -> Unit
-) {
+fun GoalTypeDropdown(selectedType: GoalType?, onTypeSelected: (GoalType) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         value = selectedType?.label ?: "",
         onValueChange = {},
         label = { Text("Goal Type") },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Outlined.TrackChanges,
-                contentDescription = null
-            )
-        },
+        leadingIcon = { Icon(Icons.Outlined.TrackChanges, contentDescription = null) },
         trailingIcon = {
             IconButton(onClick = { expanded = !expanded }) {
-                Icon(
-                    imageVector = if (expanded)
-                        Icons.Outlined.KeyboardArrowUp
-                    else
-                        Icons.Outlined.KeyboardArrowDown,
-                    contentDescription = null
-                )
+                Icon(if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown, contentDescription = null)
             }
         },
         readOnly = true,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            focusedBorderColor = GoogleBlue,
+            unfocusedBorderColor = GoogleBlue.copy(alpha = 0.4f)
         )
     )
 
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false },
-        modifier = Modifier.fillMaxWidth(0.9f)
-    ) {
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.9f)) {
         GoalType.entries.forEach { type ->
             DropdownMenuItem(
                 text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(
                             imageVector = when (type) {
                                 GoalType.WEIGHT_LOSS -> Icons.Outlined.TrendingDown
                                 GoalType.MUSCLE_GAIN -> Icons.Outlined.FitnessCenter
                             },
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = GoogleBlue
                         )
                         Text(type.label)
                     }
@@ -708,29 +584,19 @@ fun GoalTypeDropdown(
 }
 
 @Composable
-fun StyledGoalInputField(
-    label: String,
-    value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onValueChange: (String) -> Unit
-) {
+fun StyledGoalInputField(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onValueChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        leadingIcon = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null
-            )
-        },
+        leadingIcon = { Icon(imageVector = icon, contentDescription = null) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            focusedBorderColor = GoogleBlue,
+            unfocusedBorderColor = GoogleBlue.copy(alpha = 0.4f)
         )
     )
 }
