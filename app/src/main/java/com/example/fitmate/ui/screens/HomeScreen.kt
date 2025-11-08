@@ -218,7 +218,8 @@ fun GoalProgressCard(
     Surface(
         modifier = modifier
             .height(140.dp)
-            .shadow(4.dp, RoundedCornerShape(20.dp)),
+            .shadow(4.dp, RoundedCornerShape(20.dp))
+            .clickable(enabled = !isLoading) { onNavigateToGoal?.invoke() },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
@@ -245,11 +246,8 @@ fun GoalProgressCard(
                 }
 
                 goal == null -> {
-                    // ⚡ Caso não haja goal ativo
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { onNavigateToGoal?.invoke() },
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {

@@ -58,14 +58,10 @@ fun GoalScreen() {
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
         if (currentGoal != null) {
-            // Current Goal Card
             CurrentGoalCard(
                 goal = currentGoal!!,
-                onEditClick = {
-                    currentGoal = null
-                    selectedGoalType = null
-                    initialValue = ""
-                    targetValue = ""
+                onProgressUpdated = { updated ->
+                    currentGoal = updated
                 }
             )
 
@@ -130,6 +126,7 @@ fun GoalScreen() {
                         else -> return@CreateGoalSection
                     }
 
+
                     FirebaseRepository.updateUserGoal(newGoal) { success ->
                         if (success) {
                             showSuccess = true
@@ -147,8 +144,13 @@ fun GoalScreen() {
 @Composable
 fun CurrentGoalCard(
     goal: Goal,
-    onEditClick: () -> Unit
+    onProgressUpdated: (Goal?) -> Unit
 ) {
+    var isUpdating by remember { mutableStateOf(false) }
+    var newValue by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -167,78 +169,54 @@ fun CurrentGoalCard(
                 .padding(24.dp)
         ) {
             Column {
+                // 🔹 Header (Goal type + title)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.2f),
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.2f),
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Icon(
-                                    imageVector = when (goal.type) {
-                                        GoalType.WEIGHT_LOSS -> Icons.Filled.TrendingDown
-                                        GoalType.MUSCLE_GAIN -> Icons.Filled.FitnessCenter
-                                    },
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-
-                        Column {
-                            Text(
-                                goal.type.label,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            )
-                            Text(
-                                "Current Goal",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = when (goal.type) {
+                                    GoalType.WEIGHT_LOSS -> Icons.Filled.TrendingDown
+                                    GoalType.MUSCLE_GAIN -> Icons.Filled.FitnessCenter
+                                },
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = onEditClick,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "Edit Goal",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                    Column {
+                        Text(
+                            goal.type.label,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        )
+                        Text(
+                            "Current Goal",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
                         )
                     }
                 }
 
                 Spacer(Modifier.height(32.dp))
 
-                // Progress Circle
+                // 🔹 Progress Info
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "${goal.progress.toInt()}%",
                             style = MaterialTheme.typography.displayMedium.copy(
@@ -258,7 +236,7 @@ fun CurrentGoalCard(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Progress Bar
+                // 🔹 Progress Bar
                 Column {
                     Box(
                         modifier = Modifier
@@ -294,6 +272,150 @@ fun CurrentGoalCard(
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = Color.White.copy(alpha = 0.9f)
                             )
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // 🔹 Update Progress Section
+                if (isUpdating) {
+                    OutlinedTextField(
+                        value = newValue,
+                        onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) newValue = it },
+                        label = {
+                            Text(
+                                when (goal.type) {
+                                    GoalType.WEIGHT_LOSS -> "Current Weight (kg)"
+                                    GoalType.MUSCLE_GAIN -> "Current Muscle Mass (%)"
+                                }
+                            )
+                        },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.5f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            if (newValue.isNotBlank()) {
+                                isLoading = true
+                                val updatedGoal = when (goal) {
+                                    is WeightLossGoal -> {
+                                        val initial = goal.initialWeight
+                                        val target = goal.targetWeight
+                                        val current = newValue.toDouble()
+                                        val progress = ((initial - current) / (initial - target)) * 100
+
+                                        goal.copy(
+                                            currentWeight = current,
+                                            progress = progress.coerceIn(0.0, 100.0).toInt()
+                                        )
+                                    }
+
+                                    is MuscleGainGoal -> {
+                                        val initial = goal.initialMuscleMassPercent
+                                        val target = goal.targetMuscleMassPercent
+                                        val current = newValue.toDouble()
+                                        val progress = ((current - initial) / (target - initial)) * 100
+
+                                        goal.copy(
+                                            currentMuscleMassPercent = current,
+                                            progress = progress.coerceIn(0.0, 100.0).toInt()
+                                        )
+                                    }
+                                }
+
+                                FirebaseRepository.updateUserGoal(updatedGoal) { success ->
+                                    isLoading = false
+                                    if (success) {
+                                        onProgressUpdated(updatedGoal)
+                                        isUpdating = false
+                                        newValue = ""
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF4E54C8),
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Text("Save Progress", color = Color(0xFF4E54C8), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = { isUpdating = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    ) {
+                        Text(
+                            "Update Progress",
+                            color = Color(0xFF4E54C8),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // 🔹 Conditional Button (Finish / Cancel)
+                Button(
+                    onClick = {
+                        isDeleting = true
+                        FirebaseRepository.deleteUserGoal { success ->
+                            isDeleting = false
+                            if (success) {
+                                // Remove o goal da UI
+                                onProgressUpdated(null)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (goal.progress >= 100)
+                            Color(0xFF4CAF50) // verde - terminar goal
+                        else
+                            Color(0xFFFF5252) // vermelho - cancelar goal
+                    )
+                ) {
+                    if (isDeleting) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text(
+                            if (goal.progress >= 100) "Finish Goal" else "Cancel Goal",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

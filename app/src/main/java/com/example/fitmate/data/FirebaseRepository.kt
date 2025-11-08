@@ -154,6 +154,14 @@ object FirebaseRepository {
             .addOnFailureListener { onComplete(false) }
     }
 
+    fun deleteUserGoal(onComplete: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onComplete(false)
+
+        database.child("users").child(uid).child("goal").removeValue()
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
+
     fun fetchUserGoal(onResult: (Goal?) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onResult(null)
 
