@@ -20,8 +20,8 @@ fun AppNavGraph(
         modifier = Modifier.padding(innerPadding)
     ) {
         composable(NavRoutes.HOME) { HomeScreen(navController) }
-        composable(NavRoutes.WORKOUTS) { WorkoutsScreen() }
-        composable(NavRoutes.CHALLENGES) { ChallengesScreen() }
+        composable(NavRoutes.WORKOUTS) { WorkoutsScreen(navController) }
+        composable(NavRoutes.CHALLENGES) { ChallengesScreen(navController) }
         composable(NavRoutes.LEADERBOARD) { LeaderboardScreen() }
         composable(NavRoutes.PROFILE) { ProfileScreen() }
         composable(NavRoutes.GOAL) { GoalScreen() }

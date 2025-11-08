@@ -10,7 +10,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Fitmate">
+        android:theme="@style/Theme.Fitmate"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".ui.activities.AuthActivity"
@@ -28,4 +29,5 @@
             android:theme="@style/Theme.Fitmate" />
     </application>
 
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
