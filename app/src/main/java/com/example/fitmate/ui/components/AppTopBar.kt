@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.activities.AuthActivity
@@ -209,12 +210,13 @@ fun AppNavigationDrawer(
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     BoxWithConstraints {
         val drawerWidth = maxWidth * 0.65f
 
         ModalNavigationDrawer(
             drawerState = drawerState,
+            gesturesEnabled = currentRoute != "gyms",
             drawerContent = {
                 ModalDrawerSheet(
                     modifier = Modifier.width(drawerWidth),
