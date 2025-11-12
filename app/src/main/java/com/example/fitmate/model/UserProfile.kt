@@ -1,5 +1,8 @@
 package com.example.fitmate.model
 
+import com.example.fitmate.model.enums.FitnessLevelType
+import com.example.fitmate.model.enums.GenderType
+
 data class UserProfile(
     val uid: String = "",
     val name: String = "",

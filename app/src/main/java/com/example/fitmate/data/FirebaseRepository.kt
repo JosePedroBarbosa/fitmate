@@ -1,10 +1,10 @@
 package com.example.fitmate.data
 
-import com.example.fitmate.model.FitnessLevelType
-import com.example.fitmate.model.GenderType
+import com.example.fitmate.model.enums.FitnessLevelType
+import com.example.fitmate.model.enums.GenderType
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.model.WeightLossGoal
-import com.example.fitmate.model.GoalType
+import com.example.fitmate.model.enums.GoalType
 import com.example.fitmate.model.MuscleGainGoal
 import com.example.fitmate.model.Goal
 import com.google.firebase.auth.FirebaseAuth

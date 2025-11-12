@@ -123,7 +123,6 @@ fun RegisterScreen(navController: NavHostController) {
 
                 Spacer(Modifier.height(16.dp))
 
-                // ✉️ Email
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },

@@ -1,5 +1,7 @@
 package com.example.fitmate.model
 
+import com.example.fitmate.model.enums.GoalType
+
 data class MuscleGainGoal(
     override val createdAt: Long = System.currentTimeMillis(),
     override val progress: Int = 0,

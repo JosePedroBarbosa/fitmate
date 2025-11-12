@@ -25,8 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.fitmate.data.FirebaseRepository
-import com.example.fitmate.model.FitnessLevelType
-import com.example.fitmate.model.GenderType
+import com.example.fitmate.model.enums.FitnessLevelType
+import com.example.fitmate.model.enums.GenderType
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.DateOfBirthPicker
 import com.google.firebase.auth.FirebaseAuth
@@ -117,7 +117,6 @@ fun ProfileScreen() {
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Points Card with Gradient
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -191,7 +190,6 @@ fun ProfileScreen() {
 
                 Spacer(Modifier.height(24.dp))
 
-                // Personal Information Section
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -378,7 +376,6 @@ fun ProfileScreen() {
             }
         }
 
-        // Success Message
         AnimatedVisibility(
             visible = showSuccessMessage,
             enter = fadeIn(),
@@ -418,7 +415,6 @@ fun ProfileScreen() {
             }
         }
 
-        // Error Message
         AnimatedVisibility(
             visible = showErrorMessage,
             enter = fadeIn(),

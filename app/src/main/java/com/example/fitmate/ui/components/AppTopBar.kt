@@ -27,7 +27,6 @@ import com.example.fitmate.ui.navigation.NavRoutes
 import kotlinx.coroutines.launch
 
 private val GoogleBlue = Color(0xFF1A73E8)
-private val GoogleBlueDark = Color(0xFF1557B0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

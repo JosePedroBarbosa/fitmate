@@ -1,4 +1,4 @@
-package com.example.fitmate.model
+package com.example.fitmate.model.enums
 
 enum class GoalType(val label: String) {
     WEIGHT_LOSS("Weight Loss"),

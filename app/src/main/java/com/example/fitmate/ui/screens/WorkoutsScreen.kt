@@ -2,9 +2,6 @@ package com.example.fitmate.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -29,32 +25,14 @@ import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.data.RetrofitHelper
 import com.example.fitmate.data.ApiExercise
 import com.example.fitmate.data.exercisesApi
+import com.example.fitmate.model.DailyWorkout
+import com.example.fitmate.model.Exercise
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
-private val LightBlue = Color(0xFFE8F0FE)
-
-// UI MODEL
-data class Exercise(
-    val name: String?,
-    val type: String?,
-    val muscle: String?,
-    val equipment: String?,
-    val difficulty: String?,
-    val instructions: String?
-)
-
-data class DailyWorkout(
-    val date: LocalDate,
-    val title: String,
-    val description: String,
-    val duration: String,
-    val exercises: List<Exercise>,
-    val isStarted: Boolean = false
-)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -79,7 +57,6 @@ fun WorkoutsScreen(navController: NavController) {
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp)
         ) {
 
-            // Header
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth()
@@ -112,24 +89,20 @@ fun WorkoutsScreen(navController: NavController) {
                 }
             }
 
-            // Show Generate button (if no workout yet)
             if (dailyWorkout == null && !isGenerating) {
                 item {
                     GenerateWorkoutCard(onGenerateClick = {
-                        println("▶️ User clicked Generate Workout")
                         showMuscleDialog = true
                     })
                 }
             }
 
-            // Loading State
             if (isGenerating) {
                 item {
                     GeneratingWorkoutCard()
                 }
             }
 
-            // Show Workout
             dailyWorkout?.let { workout ->
                 item {
                     WorkoutOverviewCard(
@@ -140,19 +113,14 @@ fun WorkoutsScreen(navController: NavController) {
                     )
                 }
 
-                // Action Buttons - Different based on workout state
                 item {
                     if (!workout.isStarted) {
-                        // Before Starting: Show "Start" and "Generate New"
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Start Workout Button
                             Surface(
                                 onClick = {
-                                    // TODO: Register workout start in Firebase
-                                    println("🚀 Workout started!")
                                     dailyWorkout = workout.copy(isStarted = true)
                                 },
                                 modifier = Modifier
@@ -194,7 +162,6 @@ fun WorkoutsScreen(navController: NavController) {
                                 }
                             }
 
-                            // Generate New Button
                             Surface(
                                 onClick = {
                                     showMuscleDialog = true
@@ -229,16 +196,12 @@ fun WorkoutsScreen(navController: NavController) {
                             }
                         }
                     } else {
-                        // After Starting: Show "Complete" and "Generate New"
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Complete Workout Button
                             Surface(
                                 onClick = {
-                                    // TODO: Mark workout as completed and save to Firebase
-                                    println("✅ Workout completed!")
                                     dailyWorkout = null
                                 },
                                 modifier = Modifier
@@ -270,7 +233,6 @@ fun WorkoutsScreen(navController: NavController) {
                                 }
                             }
 
-                            // Generate New Button
                             Surface(
                                 onClick = {
                                     showMuscleDialog = true
@@ -324,7 +286,6 @@ fun WorkoutsScreen(navController: NavController) {
         }
     }
 
-    // Muscle Selection Dialog
     if (showMuscleDialog) {
         AlertDialog(
             onDismissRequest = { showMuscleDialog = false },
@@ -344,7 +305,6 @@ fun WorkoutsScreen(navController: NavController) {
                     items(muscleGroups) { muscle ->
                         Surface(
                             onClick = {
-                                println("✅ Generating workout for muscle: $muscle")
                                 showMuscleDialog = false
                                 isGenerating = true
 
@@ -401,7 +361,8 @@ suspend fun generateWorkoutFromApi(muscle: String, fitness: String): DailyWorkou
     }
 
     val apiResponse: List<ApiExercise> = try {
-        exercisesApi.getExercises(RetrofitHelper.API_KEY, muscle, difficulty)
+        val response = exercisesApi.getExercises(RetrofitHelper.API_KEY, muscle, difficulty)
+        response
     } catch (e: Exception) {
         emptyList()
     }
@@ -611,7 +572,6 @@ fun ExerciseCard(exercise: Exercise) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Exercise Name
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -625,7 +585,6 @@ fun ExerciseCard(exercise: Exercise) {
                     modifier = Modifier.weight(1f)
                 )
 
-                // Difficulty Badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = when (exercise.difficulty?.lowercase()) {
@@ -651,7 +610,6 @@ fun ExerciseCard(exercise: Exercise) {
                 }
             }
 
-            // Details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -666,7 +624,6 @@ fun ExerciseCard(exercise: Exercise) {
                 )
             }
 
-            // Instructions
             if (!exercise.instructions.isNullOrBlank()) {
                 Divider(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

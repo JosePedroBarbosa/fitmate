@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,39 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.fitmate.model.Challenge
+import com.example.fitmate.model.enums.ChallengeDifficulty
 
 private val GoogleBlue = Color(0xFF1A73E8)
-private val GoogleBlueDark = Color(0xFF1557B0)
-private val AccentOrange = Color(0xFFFF6B35)
-private val AccentPurple = Color(0xFF7B2CBF)
 private val AccentGreen = Color(0xFF06D6A0)
-private val AccentRed = Color(0xFFEF476F)
-
-data class Challenge(
-    val id: String,
-    val title: String,
-    val description: String,
-    val rewardPoints: Int,
-    val difficulty: ChallengeDifficulty,
-    val duration: String,
-    val exerciseCount: Int,
-    val currentProgress: Int = 0,
-    val totalProgress: Int = 100,
-    val isActive: Boolean = false
-)
-
-enum class ChallengeDifficulty(val label: String, val color: Color) {
-    EASY("Easy", AccentGreen),
-    MEDIUM("Medium", AccentOrange),
-    HARD("Hard", AccentRed),
-    EXPERT("Expert", AccentPurple)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,21 +121,6 @@ fun ChallengesScreen(navController: NavController) {
     }
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Challenges",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier

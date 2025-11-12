@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.*
 import androidx.compose.foundation.text.KeyboardOptions
+import com.example.fitmate.model.enums.GoalType
 
-// 🔹 Azul temático consistente com WorkoutsScreen
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
 private val LightBlue = Color(0xFFE8F0FE)
@@ -72,7 +72,6 @@ fun GoalScreen() {
 
             Spacer(Modifier.height(20.dp))
 
-            // 🔹 Stats Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -107,7 +106,6 @@ fun GoalScreen() {
             }
 
         } else {
-            // 🔹 Create Goal Section
             CreateGoalSection(
                 selectedGoalType = selectedGoalType,
                 initialValue = initialValue,
@@ -171,7 +169,6 @@ fun CurrentGoalCard(
                 .padding(24.dp)
         ) {
             Column {
-                // 🔹 Header
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -213,10 +210,9 @@ fun CurrentGoalCard(
 
                 Spacer(Modifier.height(32.dp))
 
-                // 🔹 Progress Info
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "${goal.progress.toInt()}%",
+                        "${goal.progress}%",
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -233,7 +229,6 @@ fun CurrentGoalCard(
 
                 Spacer(Modifier.height(24.dp))
 
-                // 🔹 Progress Bar
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -252,7 +247,6 @@ fun CurrentGoalCard(
 
                 Spacer(Modifier.height(24.dp))
 
-                // 🔹 Update Progress
                 if (isUpdating) {
                     OutlinedTextField(
                         value = newValue,

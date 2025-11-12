@@ -1,4 +1,4 @@
-package com.example.fitmate.model
+package com.example.fitmate.model.enums
 
 enum class GenderType(val label: String) {
     MALE("Male"),

@@ -1,4 +1,4 @@
-package com.example.fitmate.model
+package com.example.fitmate.model.enums
 
 enum class FitnessLevelType(val label: String) {
     BEGINNER("Beginner"),
