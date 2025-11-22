@@ -335,6 +335,21 @@ private fun DrawerContent(
         )
 
         DrawerLinkItem(
+            icon = Icons.Outlined.CollectionsBookmark,
+            label = "Workout History",
+            isSelected = selectedItem == "workout_history",
+            onClick = {
+                selectedItem = "workout_history"
+                onClose()
+                navController.navigate(NavRoutes.WORKOUT_HISTORY) {
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        )
+
+        DrawerLinkItem(
             icon = Icons.Outlined.EmojiEvents,
             label = "Goal",
             isSelected = selectedItem == "goal",

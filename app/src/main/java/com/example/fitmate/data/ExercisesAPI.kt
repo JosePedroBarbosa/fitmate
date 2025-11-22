@@ -1,5 +1,6 @@
 package com.example.fitmate.data
 
+import com.example.fitmate.model.ApiExercise
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query

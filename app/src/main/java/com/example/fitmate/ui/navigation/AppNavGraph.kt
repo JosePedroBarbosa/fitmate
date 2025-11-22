@@ -29,5 +29,6 @@ fun AppNavGraph(
         composable(NavRoutes.PROFILE) { ProfileScreen() }
         composable(NavRoutes.GOAL) { GoalScreen() }
         composable(NavRoutes.GYMS) { FindGymScreen(navController) }
+        composable(NavRoutes.WORKOUT_HISTORY) { WorkoutHistoryScreen(navController) }
     }
 }

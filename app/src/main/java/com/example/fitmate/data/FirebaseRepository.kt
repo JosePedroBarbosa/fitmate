@@ -1,5 +1,9 @@
 package com.example.fitmate.data
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.example.fitmate.model.ApiExercise
+import com.example.fitmate.model.DailyWorkout
 import com.example.fitmate.model.enums.FitnessLevelType
 import com.example.fitmate.model.enums.GenderType
 import com.example.fitmate.model.UserProfile
@@ -7,9 +11,11 @@ import com.example.fitmate.model.WeightLossGoal
 import com.example.fitmate.model.enums.GoalType
 import com.example.fitmate.model.MuscleGainGoal
 import com.example.fitmate.model.Goal
+import com.example.fitmate.model.enums.WorkoutStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
+import java.time.LocalDate
 
 object FirebaseRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -200,5 +206,140 @@ object FirebaseRepository {
             .addOnFailureListener {
                 onResult(null)
             }
+    }
+
+    fun saveWorkoutForCurrentUser(workout: DailyWorkout, onComplete: (String?) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onComplete(null)
+        val workoutsRef = database.child("users").child(uid).child("workouts").push()
+        val key = workoutsRef.key ?: return onComplete(null)
+
+        val workoutMap = mapOf(
+            "id" to key,
+            "date" to workout.date.toString(),
+            "title" to workout.title,
+            "description" to workout.description,
+            "duration" to workout.duration,
+            "status" to workout.status.name,
+            "exercises" to workout.exercises.map { ex ->
+                mapOf(
+                    "name" to ex.name,
+                    "type" to ex.type,
+                    "muscle" to ex.muscle,
+                    "equipment" to ex.equipment,
+                    "difficulty" to ex.difficulty,
+                    "instructions" to ex.instructions
+                )
+            }
+        )
+
+        workoutsRef.setValue(workoutMap)
+            .addOnSuccessListener { onComplete(key) }
+            .addOnFailureListener { onComplete(null) }
+    }
+
+    fun updateWorkoutStatusForCurrentUser(workoutId: String, status: WorkoutStatus, onComplete: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onComplete(false)
+        database.child("users").child(uid).child("workouts").child(workoutId).child("status")
+            .setValue(status.name)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun fetchCurrentStartedWorkout(onResult: (DailyWorkout?, String?) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onResult(null, null)
+        database.child("users").child(uid).child("workouts").get()
+            .addOnSuccessListener { snapshot ->
+                var foundWorkout: DailyWorkout? = null
+                var foundId: String? = null
+                for (child in snapshot.children) {
+                    val statusStr = child.child("status").getValue(String::class.java) ?: ""
+                    if (statusStr == WorkoutStatus.STARTED.name) {
+                        foundId = child.key
+                        val dateStr = child.child("date").getValue(String::class.java) ?: LocalDate.now().toString()
+                        val title = child.child("title").getValue(String::class.java) ?: ""
+                        val description = child.child("description").getValue(String::class.java) ?: ""
+                        val duration = child.child("duration").getValue(String::class.java) ?: ""
+
+                        val exercisesNode = child.child("exercises")
+                        val exercises = exercisesNode.children.map { ex ->
+                            ApiExercise(
+                                name = ex.child("name").getValue(String::class.java),
+                                type = ex.child("type").getValue(String::class.java),
+                                muscle = ex.child("muscle").getValue(String::class.java),
+                                equipment = ex.child("equipment").getValue(String::class.java),
+                                difficulty = ex.child("difficulty").getValue(String::class.java),
+                                instructions = ex.child("instructions").getValue(String::class.java)
+                            )
+                        }
+
+                        foundWorkout = DailyWorkout(
+                            date = LocalDate.parse(dateStr),
+                            title = title,
+                            description = description,
+                            duration = duration,
+                            exercises = exercises,
+                            status = WorkoutStatus.STARTED
+                        )
+                        break
+                    }
+                }
+                onResult(foundWorkout, foundId)
+            }
+            .addOnFailureListener { onResult(null, null) }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun fetchAllWorkoutsForCurrentUser(onResult: (List<Pair<DailyWorkout, String>>) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onResult(emptyList())
+        database.child("users").child(uid).child("workouts").get()
+            .addOnSuccessListener { snapshot ->
+                val list = snapshot.children.mapNotNull { child ->
+                    val id = child.key ?: return@mapNotNull null
+                    val statusStr = child.child("status").getValue(String::class.java) ?: WorkoutStatus.STARTED.name
+                    val title = child.child("title").getValue(String::class.java) ?: ""
+                    val description = child.child("description").getValue(String::class.java) ?: ""
+                    val duration = child.child("duration").getValue(String::class.java) ?: ""
+                    val dateStr = child.child("date").getValue(String::class.java) ?: java.time.LocalDate.now().toString()
+
+                    val exercisesNode = child.child("exercises")
+                    val exercises = exercisesNode.children.map { ex ->
+                        ApiExercise(
+                            name = ex.child("name").getValue(String::class.java),
+                            type = ex.child("type").getValue(String::class.java),
+                            muscle = ex.child("muscle").getValue(String::class.java),
+                            equipment = ex.child("equipment").getValue(String::class.java),
+                            difficulty = ex.child("difficulty").getValue(String::class.java),
+                            instructions = ex.child("instructions").getValue(String::class.java)
+                        )
+                    }
+
+                    val status = try {
+                        WorkoutStatus.valueOf(statusStr)
+                    } catch (_: Exception) {
+                        WorkoutStatus.STARTED
+                    }
+
+                    val date = try {
+                        java.time.LocalDate.parse(dateStr)
+                    } catch (_: Exception) {
+                        java.time.LocalDate.now()
+                    }
+
+                    Pair(
+                        DailyWorkout(
+                            date = date,
+                            title = title,
+                            description = description,
+                            duration = duration,
+                            exercises = exercises,
+                            status = status
+                        ), id
+                    )
+                }.sortedByDescending { it.first.date }
+
+                onResult(list)
+            }
+            .addOnFailureListener { onResult(emptyList()) }
     }
 }

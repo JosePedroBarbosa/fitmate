@@ -1,5 +1,6 @@
 package com.example.fitmate.model
 
+import com.example.fitmate.model.enums.WorkoutStatus
 import java.time.LocalDate
 
 data class DailyWorkout(
@@ -7,6 +8,6 @@ data class DailyWorkout(
     val title: String,
     val description: String,
     val duration: String,
-    val exercises: List<Exercise>,
-    val isStarted: Boolean = false
+    val exercises: List<ApiExercise>,
+    val status: WorkoutStatus
 )

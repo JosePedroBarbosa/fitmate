@@ -8,4 +8,5 @@ object NavRoutes {
     const val PROFILE = "profile"
     const val GOAL = "goal"
     const val GYMS = "gyms"
+    const val WORKOUT_HISTORY = "workout_history"
 }

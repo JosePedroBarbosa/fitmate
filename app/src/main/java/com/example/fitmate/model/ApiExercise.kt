@@ -1,4 +1,4 @@
-package com.example.fitmate.data
+package com.example.fitmate.model
 
 data class ApiExercise(
     val name: String?,

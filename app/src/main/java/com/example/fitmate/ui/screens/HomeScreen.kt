@@ -25,6 +25,8 @@ import androidx.navigation.NavController
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
+import com.example.fitmate.model.DailyWorkout
+import com.example.fitmate.ui.navigation.NavRoutes
 import com.example.fitmate.sensors.StepCounterManager
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
@@ -137,7 +139,13 @@ fun HomeScreen(navController: NavController) {
                             }
                         }
                     )
-                    QuickWorkoutCard(modifier = Modifier.weight(1f))
+                    QuickWorkoutCard(modifier = Modifier.weight(1f), onNavigateToWorkouts = {
+                        navController.navigate(NavRoutes.WORKOUTS) {
+                            popUpTo(NavRoutes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    })
                 }
             } else {
                 Column(
@@ -169,7 +177,13 @@ fun HomeScreen(navController: NavController) {
                             }
                         )
                     }
-                    QuickWorkoutCard(modifier = Modifier.fillMaxWidth())
+                    QuickWorkoutCard(modifier = Modifier.fillMaxWidth(), onNavigateToWorkouts = {
+                        navController.navigate(NavRoutes.WORKOUTS) {
+                            popUpTo(NavRoutes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    })
                 }
             }
         }
@@ -362,10 +376,21 @@ fun GoalProgressCard(
 
 @Composable
 fun QuickWorkoutCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToWorkouts: (() -> Unit)? = null
 ) {
+    var currentWorkout by remember { mutableStateOf<DailyWorkout?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.fetchCurrentStartedWorkout { workout, _ ->
+            currentWorkout = workout
+            isLoading = false
+        }
+    }
+
     Surface(
-        onClick = { /* TODO: Start workout */ },
+        onClick = { onNavigateToWorkouts?.invoke() },
         modifier = modifier
             .height(120.dp)
             .shadow(4.dp, RoundedCornerShape(20.dp)),
@@ -400,12 +425,33 @@ fun QuickWorkoutCard(
                             )
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Upper Body",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                        )
+                        when {
+                            isLoading -> {
+                                Box(
+                                    modifier = Modifier
+                                        .width(140.dp)
+                                        .height(18.dp)
+                                        .background(Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                        .shimmerEffect()
+                                )
+                            }
+                            currentWorkout != null -> {
+                                Text(
+                                    currentWorkout!!.title.ifBlank { "Unnamed Workout" },
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color.White.copy(alpha = 0.9f)
+                                    )
+                                )
+                            }
+                            else -> {
+                                Text(
+                                    "No workout started",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = Color.White.copy(alpha = 0.9f)
+                                    )
+                                )
+                            }
+                        }
                     }
                     Icon(
                         imageVector = Icons.Filled.FitnessCenter,
@@ -430,29 +476,59 @@ fun QuickWorkoutCard(
                             tint = Color.White.copy(alpha = 0.8f),
                             modifier = Modifier.size(16.dp)
                         )
+                        val durationText = when {
+                            isLoading -> "..."
+                            currentWorkout != null -> currentWorkout!!.duration.ifBlank { "—" }
+                            else -> "—"
+                        }
                         Text(
-                            "45 min",
+                            durationText,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = Color.White.copy(alpha = 0.8f)
                             )
                         )
                     }
 
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = "Start",
-                                tint = GoogleBlue,
-                                modifier = Modifier.size(24.dp)
+                    when {
+                        isLoading -> {
+                            Box(
+                                modifier = Modifier
+                                    .width(90.dp)
+                                    .height(36.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
+                                    .shimmerEffect()
                             )
+                        }
+                        currentWorkout == null -> {
+                            Button(
+                                onClick = { onNavigateToWorkouts?.invoke() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White,
+                                    contentColor = GoogleBlue
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Text("Create workout")
+                            }
+                        }
+                        else -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.White,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = "Open",
+                                        tint = GoogleBlue,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

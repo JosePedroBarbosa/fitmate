@@ -23,10 +23,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.data.RetrofitHelper
-import com.example.fitmate.data.ApiExercise
 import com.example.fitmate.data.exercisesApi
+import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.model.DailyWorkout
-import com.example.fitmate.model.Exercise
+import com.example.fitmate.model.enums.WorkoutStatus
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -40,7 +40,17 @@ fun WorkoutsScreen(navController: NavController) {
     var dailyWorkout by remember { mutableStateOf<DailyWorkout?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
     var showMuscleDialog by remember { mutableStateOf(false) }
+    var currentWorkoutId by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.fetchCurrentStartedWorkout { workout, id ->
+            if (workout != null) {
+                dailyWorkout = workout
+                currentWorkoutId = id
+            }
+        }
+    }
 
     val muscleGroups = listOf(
         "abdominals", "abductors", "adductors", "biceps", "calves", "chest",
@@ -114,14 +124,18 @@ fun WorkoutsScreen(navController: NavController) {
                 }
 
                 item {
-                    if (!workout.isStarted) {
+                    if (workout.status != WorkoutStatus.STARTED) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Surface(
                                 onClick = {
-                                    dailyWorkout = workout.copy(isStarted = true)
+                                    val startedWorkout = workout.copy(status = WorkoutStatus.STARTED)
+                                    FirebaseRepository.saveWorkoutForCurrentUser(startedWorkout) { id ->
+                                        currentWorkoutId = id
+                                        dailyWorkout = startedWorkout
+                                    }
                                 },
                                 modifier = Modifier
                                     .weight(1f)
@@ -202,7 +216,11 @@ fun WorkoutsScreen(navController: NavController) {
                         ) {
                             Surface(
                                 onClick = {
+                                    currentWorkoutId?.let { id ->
+                                        FirebaseRepository.updateWorkoutStatusForCurrentUser(id, WorkoutStatus.COMPLETED) { }
+                                    }
                                     dailyWorkout = null
+                                    currentWorkoutId = null
                                 },
                                 modifier = Modifier
                                     .weight(1f)
@@ -235,14 +253,18 @@ fun WorkoutsScreen(navController: NavController) {
 
                             Surface(
                                 onClick = {
-                                    showMuscleDialog = true
+                                    currentWorkoutId?.let { id ->
+                                        FirebaseRepository.updateWorkoutStatusForCurrentUser(id, WorkoutStatus.CANCELLED) { }
+                                    }
+                                    dailyWorkout = null
+                                    currentWorkoutId = null
                                 },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(56.dp)
                                     .shadow(2.dp, RoundedCornerShape(16.dp)),
                                 shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant
+                                color = Color(0xFFF44336)
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxSize(),
@@ -250,17 +272,17 @@ fun WorkoutsScreen(navController: NavController) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        Icons.Filled.Refresh,
+                                        Icons.Filled.Cancel,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        "Generate New",
+                                        "Cancel",
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = Color.White
                                         )
                                     )
                                 }
@@ -367,16 +389,7 @@ suspend fun generateWorkoutFromApi(muscle: String, fitness: String): DailyWorkou
         emptyList()
     }
 
-    val exercises = apiResponse.take(6).map {
-        Exercise(
-            name = it.name?.replace("_", " ")?.replaceFirstChar { c -> c.uppercase() },
-            type = it.type?.replace("_", " ")?.replaceFirstChar { c -> c.uppercase() },
-            muscle = it.muscle?.replace("_", " ")?.replaceFirstChar { c -> c.uppercase() },
-            equipment = it.equipment?.replace("_", " ")?.replaceFirstChar { c -> c.uppercase() },
-            difficulty = it.difficulty?.replaceFirstChar { c -> c.uppercase() },
-            instructions = it.instructions
-        )
-    }
+    val exercises = apiResponse.take(6)
 
     val formattedFitness = fitness.replaceFirstChar { it.uppercase() }
 
@@ -389,7 +402,7 @@ suspend fun generateWorkoutFromApi(muscle: String, fitness: String): DailyWorkou
             "Generated for your fitness level: $formattedFitness",
         duration = if (exercises.isEmpty()) "0 min" else "${exercises.size * 8} min",
         exercises = exercises,
-        isStarted = false
+        status = WorkoutStatus.CANCELLED
     )
 }
 
@@ -559,7 +572,7 @@ fun WorkoutOverviewCard(
 }
 
 @Composable
-fun ExerciseCard(exercise: Exercise) {
+fun ExerciseCard(exercise: ApiExercise) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
