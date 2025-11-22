@@ -18,12 +18,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
+import com.example.fitmate.sensors.StepCounterManager
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
 
@@ -34,6 +36,23 @@ private val GoogleBlueDark = Color(0xFF1557B0)
 fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoadingUser by remember { mutableStateOf(true) }
+
+    val context = LocalContext.current
+    var stepsToday by remember { mutableStateOf(0) }
+
+    val stepCounterManager = remember {
+        StepCounterManager(context) { steps ->
+            stepsToday = steps
+        }
+    }
+
+    DisposableEffect(Unit) {
+        stepCounterManager.start()
+
+        onDispose {
+            stepCounterManager.stop()
+        }
+    }
 
     LaunchedEffect(Unit) {
         FirebaseRepository.fetchUserProfile { profile ->
@@ -100,7 +119,7 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     StatCard(
                         icon = Icons.Default.DirectionsRun,
-                        value = "7,300",
+                        value = stepsToday.toString(),
                         unit = "steps",
                         label = "Steps Today",
                         gradient = Brush.linearGradient(
@@ -131,7 +150,7 @@ fun HomeScreen(navController: NavController) {
                     ) {
                         StatCard(
                             icon = Icons.Default.DirectionsRun,
-                            value = "7.3k",
+                            value = stepsToday.toString(),
                             unit = "",
                             label = "Steps",
                             gradient = Brush.linearGradient(
