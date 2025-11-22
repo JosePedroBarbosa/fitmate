@@ -1,5 +1,7 @@
 package com.example.fitmate.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,7 +33,11 @@ import com.example.fitmate.sensors.StepCounterManager
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
 import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedGoalEntity
 import com.example.fitmate.data.local.entity.CachedUserEntity
+import com.example.fitmate.model.MuscleGainGoal
+import com.example.fitmate.model.WeightLossGoal
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
@@ -39,6 +45,7 @@ import kotlinx.coroutines.launch
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
@@ -281,11 +288,82 @@ fun GoalProgressCard(
 ) {
     var goal by remember { mutableStateOf<Goal?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun toCached(uid: String, g: Goal): CachedGoalEntity = when (g) {
+        is WeightLossGoal -> CachedGoalEntity(
+            uid = uid,
+            type = g.type,
+            progress = g.progress,
+            createdAt = g.createdAt,
+            initialWeight = g.initialWeight,
+            currentWeight = g.currentWeight,
+            targetWeight = g.targetWeight,
+            initialMuscleMassPercent = null,
+            currentMuscleMassPercent = null,
+            targetMuscleMassPercent = null
+        )
+        is MuscleGainGoal -> CachedGoalEntity(
+            uid = uid,
+            type = g.type,
+            progress = g.progress,
+            createdAt = g.createdAt,
+            initialWeight = null,
+            currentWeight = null,
+            targetWeight = null,
+            initialMuscleMassPercent = g.initialMuscleMassPercent,
+            currentMuscleMassPercent = g.currentMuscleMassPercent,
+            targetMuscleMassPercent = g.targetMuscleMassPercent
+        )
+    }
+
+    fun fromCached(entity: CachedGoalEntity): Goal = when (entity.type) {
+        com.example.fitmate.model.enums.GoalType.WEIGHT_LOSS -> WeightLossGoal(
+            createdAt = entity.createdAt,
+            progress = entity.progress,
+            initialWeight = entity.initialWeight ?: 0.0,
+            currentWeight = entity.currentWeight ?: (entity.initialWeight ?: 0.0),
+            targetWeight = entity.targetWeight ?: (entity.initialWeight ?: 0.0)
+        )
+        com.example.fitmate.model.enums.GoalType.MUSCLE_GAIN -> MuscleGainGoal(
+            createdAt = entity.createdAt,
+            progress = entity.progress,
+            initialMuscleMassPercent = entity.initialMuscleMassPercent ?: 0.0,
+            currentMuscleMassPercent = entity.currentMuscleMassPercent ?: (entity.initialMuscleMassPercent ?: 0.0),
+            targetMuscleMassPercent = entity.targetMuscleMassPercent ?: (entity.initialMuscleMassPercent ?: 0.0)
+        )
+    }
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedGoalDao().getGoal(uid)
+                }
+                if (cached != null) {
+                    goal = fromCached(cached)
+                    isLoading = false
+                }
+            } catch (_: Exception) { /* ignore */ }
+        }
+
         FirebaseRepository.fetchUserGoal { fetchedGoal ->
-            goal = fetchedGoal
+            goal = fetchedGoal ?: goal
             isLoading = false
+
+            if (uid != null && fetchedGoal != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        DatabaseProvider.get(appContext).cachedGoalDao().upsert(
+                            toCached(uid, fetchedGoal)
+                        )
+                    } catch (_: Exception) { /* ignore */ }
+                }
+            }
         }
     }
 
@@ -415,6 +493,7 @@ fun GoalProgressCard(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun QuickWorkoutCard(
     modifier: Modifier = Modifier,

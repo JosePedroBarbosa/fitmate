@@ -300,6 +300,7 @@ fun ProfileScreen() {
                             uid = userProfile?.uid ?: auth.currentUser?.uid ?: "",
                             name = name,
                             email = userProfile?.email ?: auth.currentUser?.email ?: "",
+                            points = userProfile?.points ?: 0,
                             height = height.toIntOrNull(),
                             weight = weight.toDoubleOrNull(),
                             dateOfBirth = dateOfBirth,

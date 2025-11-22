@@ -26,6 +26,11 @@ import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.activities.AuthActivity
 import com.example.fitmate.ui.navigation.NavRoutes
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedUserEntity
 
 private val GoogleBlue = Color(0xFF1A73E8)
 
@@ -246,11 +251,47 @@ private fun DrawerContent(
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var selectedItem by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+
+        // 1) Ler do cache local primeiro
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedUserDao().getUser(uid)
+                }
+                if (cached != null) {
+                    userProfile = UserProfile(
+                        uid = cached.uid,
+                        name = cached.name,
+                        email = cached.email ?: ""
+                    )
+                    isLoading = false
+                }
+            } catch (_: Exception) { /* ignore */ }
+        }
+
+        // 2) Fetch online e atualiza UI + cache (write-through)
         FirebaseRepository.fetchUserProfile { profile ->
-            userProfile = profile
+            userProfile = profile ?: userProfile
             isLoading = false
+
+            if (uid != null && profile != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        DatabaseProvider.get(appContext).cachedUserDao().upsert(
+                            CachedUserEntity(
+                                uid = profile.uid,
+                                name = profile.name,
+                                email = profile.email
+                            )
+                        )
+                    } catch (_: Exception) { /* ignore */ }
+                }
+            }
         }
     }
 
