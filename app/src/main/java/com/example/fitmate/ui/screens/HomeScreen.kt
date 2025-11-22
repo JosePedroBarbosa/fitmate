@@ -30,6 +30,11 @@ import com.example.fitmate.ui.navigation.NavRoutes
 import com.example.fitmate.sensors.StepCounterManager
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedUserEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -40,6 +45,7 @@ fun HomeScreen(navController: NavController) {
     var isLoadingUser by remember { mutableStateOf(true) }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var stepsToday by remember { mutableStateOf(0) }
 
     val stepCounterManager = remember {
@@ -57,9 +63,44 @@ fun HomeScreen(navController: NavController) {
     }
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+
+        // 1) Tenta ler do cache local primeiro
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedUserDao().getUser(uid)
+                }
+                if (cached != null) {
+                    userProfile = UserProfile(
+                        uid = cached.uid,
+                        name = cached.name,
+                        email = cached.email ?: ""
+                    )
+                    isLoadingUser = false
+                }
+            } catch (_: Exception) { /* ignore */ }
+        }
+
+        // 2) Depois faz fetch online e atualiza UI + cache (write-through)
         FirebaseRepository.fetchUserProfile { profile ->
-            userProfile = profile
+            userProfile = profile ?: userProfile
             isLoadingUser = false
+
+            if (uid != null && profile != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        DatabaseProvider.get(appContext).cachedUserDao().upsert(
+                            CachedUserEntity(
+                                uid = profile.uid,
+                                name = profile.name,
+                                email = profile.email
+                            )
+                        )
+                    } catch (_: Exception) { /* ignore */ }
+                }
+            }
         }
     }
 
