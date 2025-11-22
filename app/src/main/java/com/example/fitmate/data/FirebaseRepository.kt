@@ -116,19 +116,22 @@ object FirebaseRepository {
     fun updateUserProfile(userProfile: UserProfile, onComplete: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onComplete(false)
 
-        val map = mapOf(
-            "uid" to userProfile.uid,
-            "name" to userProfile.name,
-            "email" to userProfile.email,
-            "points" to userProfile.points,
-            "height" to userProfile.height,
-            "weight" to userProfile.weight,
-            "dateOfBirth" to userProfile.dateOfBirth,
-            "gender" to userProfile.gender?.label,
-            "fitnessLevel" to userProfile.fitnessLevel?.label
-        )
+        // Only update profile-related fields; do NOT overwrite points, goal, or workouts
+        val updates = mutableMapOf<String, Any?>().apply {
+            put("uid", userProfile.uid)
+            put("name", userProfile.name)
+            put("email", userProfile.email)
+            put("height", userProfile.height)
+            put("weight", userProfile.weight)
+            put("dateOfBirth", userProfile.dateOfBirth)
+            put("gender", userProfile.gender?.label)
+            put("fitnessLevel", userProfile.fitnessLevel?.label)
+        }
 
-        database.child("users").child(uid).setValue(map)
+        // Remove nulls to avoid unintended deletions unless explicitly provided
+        val nonNullUpdates = updates.filterValues { it != null }.mapValues { it.value!! }
+
+        database.child("users").child(uid).updateChildren(nonNullUpdates)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }

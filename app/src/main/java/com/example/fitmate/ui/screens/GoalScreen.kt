@@ -24,6 +24,14 @@ import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.*
 import androidx.compose.foundation.text.KeyboardOptions
 import com.example.fitmate.model.enums.GoalType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedGoalEntity
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -38,11 +46,79 @@ fun GoalScreen() {
     var initialValue by remember { mutableStateOf("") }
     var targetValue by remember { mutableStateOf("") }
     var showSuccess by remember { mutableStateOf(false) }
+    val appContext = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        // Removed LocalContext.current access here; use the appContext captured above
+        // val appContext = LocalContext.current.applicationContext
+
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedGoalDao().getGoal(uid)
+                }
+                if (cached != null) {
+                    currentGoal = when (cached.type) {
+                        GoalType.WEIGHT_LOSS -> WeightLossGoal(
+                            createdAt = cached.createdAt,
+                            progress = cached.progress,
+                            initialWeight = cached.initialWeight ?: 0.0,
+                            currentWeight = cached.currentWeight ?: (cached.initialWeight ?: 0.0),
+                            targetWeight = cached.targetWeight ?: (cached.initialWeight ?: 0.0)
+                        )
+                        GoalType.MUSCLE_GAIN -> MuscleGainGoal(
+                            createdAt = cached.createdAt,
+                            progress = cached.progress,
+                            initialMuscleMassPercent = cached.initialMuscleMassPercent ?: 0.0,
+                            currentMuscleMassPercent = cached.currentMuscleMassPercent ?: (cached.initialMuscleMassPercent ?: 0.0),
+                            targetMuscleMassPercent = cached.targetMuscleMassPercent ?: (cached.initialMuscleMassPercent ?: 0.0)
+                        )
+                    }
+                    isLoading = false
+                }
+            } catch (_: Exception) { }
+        }
+
         FirebaseRepository.fetchUserGoal { goal ->
-            currentGoal = goal
+            currentGoal = goal ?: currentGoal
             isLoading = false
+
+            if (uid != null && goal != null) {
+                val entity = when (goal) {
+                    is WeightLossGoal -> CachedGoalEntity(
+                        uid = uid,
+                        type = goal.type,
+                        progress = goal.progress,
+                        createdAt = goal.createdAt,
+                        initialWeight = goal.initialWeight,
+                        currentWeight = goal.currentWeight,
+                        targetWeight = goal.targetWeight,
+                        initialMuscleMassPercent = null,
+                        currentMuscleMassPercent = null,
+                        targetMuscleMassPercent = null
+                    )
+                    is MuscleGainGoal -> CachedGoalEntity(
+                        uid = uid,
+                        type = goal.type,
+                        progress = goal.progress,
+                        createdAt = goal.createdAt,
+                        initialWeight = null,
+                        currentWeight = null,
+                        targetWeight = null,
+                        initialMuscleMassPercent = goal.initialMuscleMassPercent,
+                        currentMuscleMassPercent = goal.currentMuscleMassPercent,
+                        targetMuscleMassPercent = goal.targetMuscleMassPercent
+                    )
+                }
+                // salvar no cache em IO usando scope capturado
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        DatabaseProvider.get(appContext).cachedGoalDao().upsert(entity)
+                    } catch (_: Exception) { }
+                }
+            }
         }
     }
 
@@ -133,6 +209,41 @@ fun GoalScreen() {
                         if (success) {
                             showSuccess = true
                             currentGoal = newGoal
+
+                            val uid = FirebaseAuth.getInstance().currentUser?.uid
+                            if (uid != null) {
+                                val entity = when (newGoal) {
+                                    is WeightLossGoal -> CachedGoalEntity(
+                                        uid = uid,
+                                        type = newGoal.type,
+                                        progress = newGoal.progress,
+                                        createdAt = newGoal.createdAt,
+                                        initialWeight = newGoal.initialWeight,
+                                        currentWeight = newGoal.currentWeight,
+                                        targetWeight = newGoal.targetWeight,
+                                        initialMuscleMassPercent = null,
+                                        currentMuscleMassPercent = null,
+                                        targetMuscleMassPercent = null
+                                    )
+                                    is MuscleGainGoal -> CachedGoalEntity(
+                                        uid = uid,
+                                        type = newGoal.type,
+                                        progress = newGoal.progress,
+                                        createdAt = newGoal.createdAt,
+                                        initialWeight = null,
+                                        currentWeight = null,
+                                        targetWeight = null,
+                                        initialMuscleMassPercent = newGoal.initialMuscleMassPercent,
+                                        currentMuscleMassPercent = newGoal.currentMuscleMassPercent,
+                                        targetMuscleMassPercent = newGoal.targetMuscleMassPercent
+                                    )
+                                }
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        DatabaseProvider.get(appContext).cachedGoalDao().upsert(entity)
+                                    } catch (_: Exception) { }
+                                }
+                            }
                         }
                     }
                 }
@@ -152,6 +263,9 @@ fun CurrentGoalCard(
     var newValue by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
+    // Capture context and scope for cache operations triggered by UI callbacks
+    val cardAppContext = LocalContext.current.applicationContext
+    val cardScope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier
@@ -355,7 +469,17 @@ fun CurrentGoalCard(
                         isDeleting = true
                         FirebaseRepository.deleteUserGoal { success ->
                             isDeleting = false
-                            if (success) onProgressUpdated(null)
+                            if (success) {
+                                onProgressUpdated(null)
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                if (uid != null) {
+                                    cardScope.launch(Dispatchers.IO) {
+                                        try {
+                                            DatabaseProvider.get(cardAppContext).cachedGoalDao().delete(uid)
+                                        } catch (_: Exception) { }
+                                    }
+                                }
+                            }
                         }
                     },
                     modifier = Modifier
