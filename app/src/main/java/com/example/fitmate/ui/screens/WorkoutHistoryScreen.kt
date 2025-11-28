@@ -20,7 +20,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+ 
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.DailyWorkout
 import com.example.fitmate.model.enums.WorkoutStatus
@@ -33,7 +33,7 @@ private val GoogleBlueDark = Color(0xFF1557B0)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WorkoutHistoryScreen(navController: NavController) {
+fun WorkoutHistoryScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var workouts by remember { mutableStateOf<List<Pair<DailyWorkout, String>>>(emptyList()) }
 

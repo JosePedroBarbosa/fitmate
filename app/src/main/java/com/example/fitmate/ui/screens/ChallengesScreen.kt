@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.fitmate.model.Challenge
 import com.example.fitmate.model.enums.ChallengeDifficulty
 
@@ -32,7 +31,7 @@ private val AccentGreen = Color(0xFF06D6A0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChallengesScreen(navController: NavController) {
+fun ChallengesScreen() {
     val challenges = remember {
         listOf(
             Challenge(

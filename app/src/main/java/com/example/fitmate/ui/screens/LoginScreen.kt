@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
+private const val ROUTE_REGISTER = "register"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -247,7 +248,7 @@ fun LoginScreen(navController: NavHostController) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
-                    TextButton(onClick = { navController.navigate("register") }) {
+                    TextButton(onClick = { navController.navigate(ROUTE_REGISTER) }) {
                         Text(
                             "Register",
                             style = MaterialTheme.typography.bodyMedium.copy(

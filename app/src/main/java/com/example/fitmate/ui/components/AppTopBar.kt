@@ -219,14 +219,14 @@ fun AppNavigationDrawer(
     BoxWithConstraints {
         val drawerWidth = maxWidth * 0.65f
 
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            gesturesEnabled = currentRoute != "gyms",
-            drawerContent = {
-                ModalDrawerSheet(
-                    modifier = Modifier.width(drawerWidth),
-                    drawerShape = RoundedCornerShape(0.dp)
-                ) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = currentRoute != NavRoutes.GYMS,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(drawerWidth),
+                drawerShape = RoundedCornerShape(0.dp)
+            ) {
                     DrawerContent(
                         navController = navController,
                         onClose = {

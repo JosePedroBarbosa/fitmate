@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+ 
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.data.RetrofitHelper
 import com.example.fitmate.data.exercisesApi
@@ -36,7 +36,7 @@ private val GoogleBlueDark = Color(0xFF1557B0)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WorkoutsScreen(navController: NavController) {
+fun WorkoutsScreen() {
     var dailyWorkout by remember { mutableStateOf<DailyWorkout?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
     var showMuscleDialog by remember { mutableStateOf(false) }
@@ -52,11 +52,13 @@ fun WorkoutsScreen(navController: NavController) {
         }
     }
 
-    val muscleGroups = listOf(
-        "abdominals", "abductors", "adductors", "biceps", "calves", "chest",
-        "forearms", "glutes", "hamstrings", "lats", "lower_back", "middle_back",
-        "neck", "quadriceps", "traps", "triceps"
-    )
+    val muscleGroups = remember {
+        listOf(
+            "abdominals", "abductors", "adductors", "biceps", "calves", "chest",
+            "forearms", "glutes", "hamstrings", "lats", "lower_back", "middle_back",
+            "neck", "quadriceps", "traps", "triceps"
+        )
+    }
 
     Scaffold { padding ->
         LazyColumn(

@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.navigation.NavController
+ 
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
@@ -28,9 +27,8 @@ import java.net.URL
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
 @Composable
-fun FindGymScreen(navController: NavController) {
+fun FindGymScreen() {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     var hasPermission by remember { mutableStateOf(false) }
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
@@ -72,11 +70,19 @@ fun FindGymScreen(navController: NavController) {
             if (userLocation != null) {
                 var gyms by remember { mutableStateOf<List<Pair<String, LatLng>>>(emptyList()) }
 
+                val apiKey = remember {
+                    try {
+                        val appContext = context.applicationContext
+                        val ai = appContext.packageManager.getApplicationInfo(appContext.packageName, PackageManager.GET_META_DATA)
+                        ai.metaData?.getString("com.google.android.geo.API_KEY") ?: ""
+                    } catch (_: Exception) { "" }
+                }
+
                 LaunchedEffect(userLocation) {
-                    scope.launch {
-                        val lat = userLocation!!.latitude
-                        val lng = userLocation!!.longitude
-                        gyms = fetchNearbyGyms(lat, lng, "AIzaSyCx45MAL2sghGilIyjnfon7QpQ7c8unnyA")
+                    userLocation?.let { loc ->
+                        val lat = loc.latitude
+                        val lng = loc.longitude
+                        gyms = fetchNearbyGyms(lat, lng, apiKey)
                     }
                 }
 
@@ -125,11 +131,11 @@ suspend fun fetchNearbyGyms(
     apiKey: String
 ): List<Pair<String, LatLng>> {
     return withContext(Dispatchers.IO) {
-        val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
-                "?location=$lat,$lng" +
-                "&radius=3000" + // raio de 3 km
-                "&type=gym" +
-                "&key=$apiKey"
+                    val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                            "?location=$lat,$lng" +
+                            "&radius=3000" +
+                            "&type=gym" +
+                            "&key=$apiKey"
 
         try {
             val response = URL(url).readText()

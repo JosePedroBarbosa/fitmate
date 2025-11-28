@@ -79,6 +79,7 @@ fun HomeScreen(navController: NavController) {
                 val cached = withContext(Dispatchers.IO) {
                     DatabaseProvider.get(appContext).cachedUserDao().getUser(uid)
                 }
+
                 if (cached != null) {
                     userProfile = UserProfile(
                         uid = cached.uid,
@@ -87,10 +88,11 @@ fun HomeScreen(navController: NavController) {
                     )
                     isLoadingUser = false
                 }
-            } catch (_: Exception) { /* ignore */ }
+
+            } catch (_: Exception) { }
         }
 
-        // 2) Depois faz fetch online e atualiza UI + cache (write-through)
+        // 2) Depois faz fetch online e atualiza UI + cache
         FirebaseRepository.fetchUserProfile { profile ->
             userProfile = profile ?: userProfile
             isLoadingUser = false
@@ -105,7 +107,7 @@ fun HomeScreen(navController: NavController) {
                                 email = profile.email
                             )
                         )
-                    } catch (_: Exception) { /* ignore */ }
+                    } catch (_: Exception) { }
                 }
             }
         }
@@ -133,7 +135,9 @@ fun HomeScreen(navController: NavController) {
                         )
                         .shimmerEffect()
                 )
+
                 Spacer(Modifier.height(8.dp))
+
                 Box(
                     modifier = Modifier
                         .width(250.dp)
@@ -146,6 +150,7 @@ fun HomeScreen(navController: NavController) {
                 )
             } else {
                 val firstName = userProfile?.name?.split(" ")?.firstOrNull() ?: "User"
+
                 Text(
                     "Welcome, $firstName! 👋",
                     style = MaterialTheme.typography.headlineMedium.copy(
@@ -177,16 +182,18 @@ fun HomeScreen(navController: NavController) {
                         ),
                         modifier = Modifier.weight(1f)
                     )
+
                     GoalProgressCard(
                         modifier = Modifier.weight(1f),
                         onNavigateToGoal = {
-                            navController.navigate("goal") {
-                                popUpTo("home") { saveState = true }
+                            navController.navigate(NavRoutes.GOAL) {
+                                popUpTo(NavRoutes.HOME) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         }
                     )
+
                     QuickWorkoutCard(modifier = Modifier.weight(1f), onNavigateToWorkouts = {
                         navController.navigate(NavRoutes.WORKOUTS) {
                             popUpTo(NavRoutes.HOME) { saveState = true }
@@ -194,6 +201,7 @@ fun HomeScreen(navController: NavController) {
                             restoreState = true
                         }
                     })
+
                 }
             } else {
                 Column(
@@ -214,17 +222,19 @@ fun HomeScreen(navController: NavController) {
                             ),
                             modifier = Modifier.weight(1f)
                         )
+
                         GoalProgressCard(
                             modifier = Modifier.weight(1f),
                             onNavigateToGoal = {
-                                navController.navigate("goal") {
-                                    popUpTo("home") { saveState = true }
+                                navController.navigate(NavRoutes.GOAL) {
+                                    popUpTo(NavRoutes.HOME) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
                             }
                         )
                     }
+
                     QuickWorkoutCard(modifier = Modifier.fillMaxWidth(), onNavigateToWorkouts = {
                         navController.navigate(NavRoutes.WORKOUTS) {
                             popUpTo(NavRoutes.HOME) { saveState = true }
@@ -232,6 +242,7 @@ fun HomeScreen(navController: NavController) {
                             restoreState = true
                         }
                     })
+
                 }
             }
         }
@@ -253,6 +264,7 @@ fun HomeScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                 )
+
                 TextButton(onClick = { }) {
                     Text("View all")
                 }
@@ -304,6 +316,7 @@ fun GoalProgressCard(
             currentMuscleMassPercent = null,
             targetMuscleMassPercent = null
         )
+
         is MuscleGainGoal -> CachedGoalEntity(
             uid = uid,
             type = g.type,
@@ -326,6 +339,7 @@ fun GoalProgressCard(
             currentWeight = entity.currentWeight ?: (entity.initialWeight ?: 0.0),
             targetWeight = entity.targetWeight ?: (entity.initialWeight ?: 0.0)
         )
+
         com.example.fitmate.model.enums.GoalType.MUSCLE_GAIN -> MuscleGainGoal(
             createdAt = entity.createdAt,
             progress = entity.progress,

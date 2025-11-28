@@ -24,12 +24,8 @@ fun DateOfBirthPicker(
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
-    val dateText = remember(selectedDate) {
-        if (selectedDate.isNotEmpty()) selectedDate else ""
-    }
-
     OutlinedTextField(
-        value = dateText,
+        value = selectedDate,
         onValueChange = {},
         label = { Text("Date of Birth") },
         leadingIcon = {

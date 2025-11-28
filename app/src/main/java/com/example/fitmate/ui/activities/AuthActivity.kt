@@ -14,6 +14,9 @@ import com.example.fitmate.ui.screens.LoginScreen
 import com.example.fitmate.ui.screens.RegisterScreen
 import com.example.fitmate.ui.theme.FitmateTheme
 
+private const val ROUTE_LOGIN = "login"
+private const val ROUTE_REGISTER = "register"
+
 class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,10 +34,10 @@ class AuthActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "login"
+                        startDestination = ROUTE_LOGIN
                     ) {
-                        composable("login") { LoginScreen(navController) }
-                        composable("register") { RegisterScreen(navController) }
+                        composable(ROUTE_LOGIN) { LoginScreen(navController) }
+                        composable(ROUTE_REGISTER) { RegisterScreen(navController) }
                     }
                 }
             }
