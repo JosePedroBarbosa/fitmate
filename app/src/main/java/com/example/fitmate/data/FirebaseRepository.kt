@@ -345,4 +345,46 @@ object FirebaseRepository {
             }
             .addOnFailureListener { onResult(emptyList()) }
     }
+
+    fun fetchTopUsersByPoints(limit: Int = 10, onResult: (List<UserProfile>) -> Unit) {
+        database.child("users").get()
+            .addOnSuccessListener { snapshot ->
+                val list = snapshot.children.mapNotNull { child ->
+                    val key = child.key ?: ""
+                    val uidValue = child.child("uid").getValue(String::class.java) ?: key
+                    val name = child.child("name").getValue(String::class.java) ?: ""
+                    val email = child.child("email").getValue(String::class.java) ?: ""
+                    val rawPoints = child.child("points").value
+                    val points = when (rawPoints) {
+                        is Long -> rawPoints.toInt()
+                        is Double -> rawPoints.toInt()
+                        is Int -> rawPoints
+                        is String -> rawPoints.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val height = child.child("height").getValue(Int::class.java)
+                    val weight = child.child("weight").getValue(Double::class.java)
+                    val dateOfBirth = child.child("dateOfBirth").getValue(String::class.java)
+                    val genderStr = child.child("gender").getValue(String::class.java)
+                    val fitnessStr = child.child("fitnessLevel").getValue(String::class.java)
+
+                    UserProfile(
+                        uid = uidValue,
+                        name = name,
+                        email = email,
+                        points = points,
+                        height = height,
+                        weight = weight,
+                        dateOfBirth = dateOfBirth,
+                        gender = genderStr?.let { GenderType.fromLabel(it) },
+                        fitnessLevel = fitnessStr?.let { FitnessLevelType.fromLabel(it) }
+                    )
+                }.sortedByDescending { it.points }.take(limit)
+
+                onResult(list)
+            }
+            .addOnFailureListener { e ->
+                onResult(emptyList())
+            }
+    }
 }
