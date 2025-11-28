@@ -10,7 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -20,26 +20,87 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fitmate.model.LeaderboardUser
+import com.example.fitmate.data.FirebaseRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedLeaderboardEntryEntity
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LeaderboardScreen() {
-    val users = listOf(
-        LeaderboardUser("Sarah Connor", 2850, 1),
-        LeaderboardUser("Mike Johnson", 2720, 2),
-        LeaderboardUser("Emma Wilson", 2680, 3),
-        LeaderboardUser("Alex Turner", 2540, 4),
-        LeaderboardUser("Lisa Anderson", 2480, 5),
-        LeaderboardUser("David Chen", 2420, 6),
-        LeaderboardUser("Sophie Martin", 2380, 7),
-        LeaderboardUser("You", 2210, 8, isCurrentUser = true),
-        LeaderboardUser("Ryan Cooper", 2180, 9),
-        LeaderboardUser("Maria Garcia", 2150, 10),
-        LeaderboardUser("James Brown", 2100, 11),
-        LeaderboardUser("Anna Lee", 2050, 12),
-        LeaderboardUser("Tom Holland", 2020, 13),
-        LeaderboardUser("Kate Miller", 1980, 14),
-        LeaderboardUser("Chris Evans", 1950, 15)
-    )
+    var leaderboardUsers by remember { mutableStateOf<List<LeaderboardUser>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        val appContext = context.applicationContext
+        val cached = try {
+            withContext(Dispatchers.IO) {
+                DatabaseProvider.get(appContext).cachedLeaderboardDao().getAll()
+            }
+        } catch (_: Exception) { emptyList() }
+
+        if (cached.isNotEmpty()) {
+            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+            leaderboardUsers = cached.map { e ->
+                LeaderboardUser(
+                    name = e.name,
+                    points = e.points,
+                    rank = e.rank,
+                    isCurrentUser = e.uid == currentUid
+                )
+            }
+            isLoading = false
+        }
+
+        FirebaseRepository.fetchTopUsersByPoints { users ->
+            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+            val mapped = users.take(10).mapIndexed { index, u ->
+                LeaderboardUser(
+                    name = u.name,
+                    points = u.points,
+                    rank = index + 1,
+                    isCurrentUser = u.uid == currentUid
+                )
+            }
+            if (mapped.isEmpty()) {
+                FirebaseRepository.fetchUserProfile { profile ->
+                    val single = profile?.let {
+                        listOf(
+                            LeaderboardUser(
+                                name = it.name,
+                                points = it.points,
+                                rank = 1,
+                                isCurrentUser = true
+                            )
+                        )
+                    } ?: emptyList()
+                    leaderboardUsers = single
+                    isLoading = false
+                }
+            } else {
+                leaderboardUsers = mapped
+                isLoading = false
+                scope.launch(Dispatchers.IO) {
+                    val dao = DatabaseProvider.get(appContext).cachedLeaderboardDao()
+                    val toSave = users.take(10).mapIndexed { index, u ->
+                        CachedLeaderboardEntryEntity(
+                            rank = index + 1,
+                            uid = u.uid,
+                            name = u.name,
+                            points = u.points
+                        )
+                    }
+                    dao.clear()
+                    dao.upsertAll(toSave)
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -52,12 +113,26 @@ fun LeaderboardScreen() {
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             item {
-                PodiumSection(
-                    first = users[0],
-                    second = users[1],
-                    third = users[2]
-                )
-                Spacer(Modifier.height(24.dp))
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    val first = leaderboardUsers.getOrNull(0) ?: LeaderboardUser("Sem dados", 0, 1)
+                    val second = leaderboardUsers.getOrNull(1) ?: LeaderboardUser("Sem dados", 0, 2)
+                    val third = leaderboardUsers.getOrNull(2) ?: LeaderboardUser("Sem dados", 0, 3)
+                    PodiumSection(
+                        first = first,
+                        second = second,
+                        third = third
+                    )
+                    Spacer(Modifier.height(24.dp))
+                }
             }
 
             item {
@@ -105,7 +180,8 @@ fun LeaderboardScreen() {
                 }
             }
 
-            itemsIndexed(users.subList(3, 10)) { _, user ->
+            val listItems = leaderboardUsers.drop(3)
+            itemsIndexed(listItems.take(7)) { index, user ->
                 LeaderboardItem(
                     user = user,
                     isTopPerformer = true,
