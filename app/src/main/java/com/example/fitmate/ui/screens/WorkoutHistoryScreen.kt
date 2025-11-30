@@ -2,6 +2,7 @@ package com.example.fitmate.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +17,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
  
@@ -27,6 +31,8 @@ import com.example.fitmate.model.enums.WorkoutStatus
 import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.ui.components.shimmerEffect
 import java.time.format.DateTimeFormatter
+import android.graphics.BitmapFactory
+import java.io.File
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -136,6 +142,25 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            val photoPath = workout.photoPath
+            if (!photoPath.isNullOrBlank()) {
+                val file = File(photoPath)
+                if (file.exists()) {
+                    val bitmap = remember(photoPath) { BitmapFactory.decodeFile(photoPath) }
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
- 
+
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.data.RetrofitHelper
 import com.example.fitmate.data.exercisesApi
@@ -30,6 +30,20 @@ import com.example.fitmate.model.enums.WorkoutStatus
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
+import java.io.File
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -41,6 +55,7 @@ fun WorkoutsScreen() {
     var isGenerating by remember { mutableStateOf(false) }
     var showMuscleDialog by remember { mutableStateOf(false) }
     var currentWorkoutId by remember { mutableStateOf<String?>(null) }
+    var showPhotoDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -218,11 +233,7 @@ fun WorkoutsScreen() {
                         ) {
                             Surface(
                                 onClick = {
-                                    currentWorkoutId?.let { id ->
-                                        FirebaseRepository.updateWorkoutStatusForCurrentUser(id, WorkoutStatus.COMPLETED) { }
-                                    }
-                                    dailyWorkout = null
-                                    currentWorkoutId = null
+                                    showPhotoDialog = true
                                 },
                                 modifier = Modifier
                                     .weight(1f)
@@ -308,6 +319,20 @@ fun WorkoutsScreen() {
                 }
             }
         }
+    }
+
+    val workoutIdForDialog = currentWorkoutId
+    if (showPhotoDialog && workoutIdForDialog != null) {
+        PhotoCaptureDialog(
+            workoutId = workoutIdForDialog,
+            onCompleted = {
+                FirebaseRepository.updateWorkoutStatusForCurrentUser(workoutIdForDialog, WorkoutStatus.COMPLETED) { }
+                dailyWorkout = null
+                currentWorkoutId = null
+                showPhotoDialog = false
+            },
+            onDismiss = { showPhotoDialog = false }
+        )
     }
 
     if (showMuscleDialog) {
@@ -698,5 +723,111 @@ fun ExerciseDetail(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
+    }
+}
+
+@Composable
+fun PhotoCaptureDialog(
+    workoutId: String,
+    onCompleted: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasPermission by rememberSaveable { mutableStateOf(false) }
+    var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        hasPermission = granted
+    }
+
+    LaunchedEffect(Unit) {
+        launcher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    Dialog(onDismissRequest = { if (!isUploading) onDismiss() }) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (hasPermission) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        val previewView = androidx.camera.view.PreviewView(ctx)
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = Preview.Builder().build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
+                            val capture = ImageCapture.Builder().setTargetRotation(previewView.display.rotation).build()
+                            imageCapture = capture
+                            val selector = CameraSelector.DEFAULT_BACK_CAMERA
+                            cameraProvider.unbindAll()
+                            cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, capture)
+                        }, ContextCompat.getMainExecutor(ctx))
+                        previewView
+                    }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    onClick = { if (!isUploading) onDismiss() },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Cancelar")
+                    }
+                }
+
+                Surface(
+                    onClick = {
+                        val capture = imageCapture ?: return@Surface
+                        val file = File(context.filesDir, "workout_photo_${System.currentTimeMillis()}.jpg")
+                        val output = ImageCapture.OutputFileOptions.Builder(file).build()
+                        isUploading = true
+                        capture.takePicture(output, ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
+                            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                                FirebaseRepository.saveWorkoutPhotoPathForCurrentUser(workoutId, file.absolutePath) { _ ->
+                                    onCompleted()
+                                    isUploading = false
+                                }
+                            }
+                            override fun onError(exception: ImageCaptureException) {
+                                isUploading = false
+                            }
+                        })
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = GoogleBlue
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isUploading) {
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("A guardar...", color = Color.White)
+                        } else {
+                            Icon(Icons.Filled.CameraAlt, contentDescription = null, tint = Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Capturar & Guardar", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

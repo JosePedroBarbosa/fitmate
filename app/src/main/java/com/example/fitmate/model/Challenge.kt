@@ -1,6 +1,7 @@
 package com.example.fitmate.model
 
 import com.example.fitmate.model.enums.ChallengeDifficulty
+import com.example.fitmate.model.DailyWorkout
 
 data class Challenge(
     val id: String,
@@ -12,5 +13,6 @@ data class Challenge(
     val exerciseCount: Int,
     val currentProgress: Int = 0,
     val totalProgress: Int = 100,
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
+    val workouts: List<DailyWorkout>? = null
 )

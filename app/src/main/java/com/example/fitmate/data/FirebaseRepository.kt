@@ -15,6 +15,7 @@ import com.example.fitmate.model.enums.WorkoutStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
+import java.io.File
 import java.time.LocalDate
 
 object FirebaseRepository {
@@ -223,6 +224,7 @@ object FirebaseRepository {
             "description" to workout.description,
             "duration" to workout.duration,
             "status" to workout.status.name,
+            "photoPath" to workout.photoPath,
             "exercises" to workout.exercises.map { ex ->
                 mapOf(
                     "name" to ex.name,
@@ -244,6 +246,14 @@ object FirebaseRepository {
         val uid = auth.currentUser?.uid ?: return onComplete(false)
         database.child("users").child(uid).child("workouts").child(workoutId).child("status")
             .setValue(status.name)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun saveWorkoutPhotoPathForCurrentUser(workoutId: String, path: String, onComplete: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onComplete(false)
+        database.child("users").child(uid).child("workouts").child(workoutId).child("photoPath")
+            .setValue(path)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }
@@ -276,13 +286,15 @@ object FirebaseRepository {
                             )
                         }
 
+                        val photoPath = child.child("photoPath").getValue(String::class.java)
                         foundWorkout = DailyWorkout(
                             date = LocalDate.parse(dateStr),
                             title = title,
                             description = description,
                             duration = duration,
                             exercises = exercises,
-                            status = WorkoutStatus.STARTED
+                            status = WorkoutStatus.STARTED,
+                            photoPath = photoPath
                         )
                         break
                     }
@@ -304,6 +316,7 @@ object FirebaseRepository {
                     val description = child.child("description").getValue(String::class.java) ?: ""
                     val duration = child.child("duration").getValue(String::class.java) ?: ""
                     val dateStr = child.child("date").getValue(String::class.java) ?: java.time.LocalDate.now().toString()
+                    val photoPath = child.child("photoPath").getValue(String::class.java)
 
                     val exercisesNode = child.child("exercises")
                     val exercises = exercisesNode.children.map { ex ->
@@ -336,7 +349,8 @@ object FirebaseRepository {
                             description = description,
                             duration = duration,
                             exercises = exercises,
-                            status = status
+                            status = status,
+                            photoPath = photoPath
                         ), id
                     )
                 }.sortedByDescending { it.first.date }
