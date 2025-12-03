@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,7 +28,7 @@ fun DateOfBirthPicker(
     OutlinedTextField(
         value = selectedDate,
         onValueChange = {},
-        label = { Text("Date of Birth") },
+        label = { Text(stringResource(id = com.example.fitmate.R.string.profile_date_of_birth)) },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Outlined.CalendarMonth,
@@ -77,7 +78,7 @@ fun DateOfBirthPicker(
                     showDialog = false
                 }) {
                     Text(
-                        text = "OK",
+                        text = stringResource(id = com.example.fitmate.R.string.ok),
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -85,7 +86,7 @@ fun DateOfBirthPicker(
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(id = com.example.fitmate.R.string.cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         ) {
@@ -96,7 +97,7 @@ fun DateOfBirthPicker(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Select Date of Birth",
+                    text = stringResource(id = com.example.fitmate.R.string.profile_select_date_of_birth),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),

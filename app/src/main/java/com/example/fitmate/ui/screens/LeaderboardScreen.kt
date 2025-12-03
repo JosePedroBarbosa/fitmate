@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.example.fitmate.data.local.DatabaseProvider
 import com.example.fitmate.data.local.entity.CachedLeaderboardEntryEntity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -123,9 +124,9 @@ fun LeaderboardScreen() {
                         CircularProgressIndicator()
                     }
                 } else {
-                    val first = leaderboardUsers.getOrNull(0) ?: LeaderboardUser("Sem dados", 0, 1)
-                    val second = leaderboardUsers.getOrNull(1) ?: LeaderboardUser("Sem dados", 0, 2)
-                    val third = leaderboardUsers.getOrNull(2) ?: LeaderboardUser("Sem dados", 0, 3)
+                    val first = leaderboardUsers.getOrNull(0) ?: LeaderboardUser(stringResource(id = com.example.fitmate.R.string.leaderboard_no_data), 0, 1)
+                    val second = leaderboardUsers.getOrNull(1) ?: LeaderboardUser(stringResource(id = com.example.fitmate.R.string.leaderboard_no_data), 0, 2)
+                    val third = leaderboardUsers.getOrNull(2) ?: LeaderboardUser(stringResource(id = com.example.fitmate.R.string.leaderboard_no_data), 0, 3)
                     PodiumSection(
                         first = first,
                         second = second,
@@ -147,7 +148,7 @@ fun LeaderboardScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Top Performers",
+                            stringResource(id = com.example.fitmate.R.string.leaderboard_top_performers),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -168,7 +169,7 @@ fun LeaderboardScreen() {
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    "Top 10",
+                                    stringResource(id = com.example.fitmate.R.string.leaderboard_top_10_label),
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
@@ -271,7 +272,7 @@ fun PodiumPosition(
         )
 
         Text(
-            "${user.points} pts",
+            stringResource(id = com.example.fitmate.R.string.leaderboard_points_short_format, user.points),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
@@ -389,7 +390,7 @@ fun LeaderboardItem(
                                 color = MaterialTheme.colorScheme.primary
                             ) {
                                 Text(
-                                    "You",
+                                    stringResource(id = com.example.fitmate.R.string.leaderboard_you_chip),
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold
@@ -410,7 +411,7 @@ fun LeaderboardItem(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            "${user.points} points",
+                            stringResource(id = com.example.fitmate.R.string.leaderboard_points_format, user.points),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )

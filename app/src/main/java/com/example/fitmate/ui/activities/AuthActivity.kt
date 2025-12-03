@@ -21,6 +21,8 @@ class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        applySavedLocale()
+
         if (FirebaseRepository.isUserLoggedIn()) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -41,6 +43,19 @@ class AuthActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun applySavedLocale() {
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        val code = prefs.getString("language_code", null)
+        if (!code.isNullOrBlank()) {
+            val locale = java.util.Locale(code)
+            java.util.Locale.setDefault(locale)
+            val res = resources
+            val config = res.configuration
+            config.setLocale(locale)
+            res.updateConfiguration(config, res.displayMetrics)
         }
     }
 }

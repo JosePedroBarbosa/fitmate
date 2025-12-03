@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.fitmate.R
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.model.Challenge
@@ -55,7 +57,7 @@ fun ChallengesHistoryScreen() {
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Challenges History",
+                        text = stringResource(id = R.string.drawer_challenges_history),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -70,8 +72,9 @@ fun ChallengesHistoryScreen() {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
+                        val completedCount = itemsState.count { it.first.isCompleted }
                         Text(
-                            text = "${itemsState.count { it.first.isCompleted }} completed • ${itemsState.size} total",
+                            text = stringResource(id = R.string.workouts_summary_format, completedCount, itemsState.size),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -142,7 +145,7 @@ private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challe
             }
 
             Text(
-                text = challenge?.title ?: "Challenge",
+                text = challenge?.title ?: stringResource(id = R.string.challenge_label),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -168,7 +171,7 @@ private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challe
                 )
                 val exCount = challenge?.exerciseCount ?: 0
                 Text(
-                    text = if (exCount > 0) "$exCount exercises" else "--",
+                    text = if (exCount > 0) stringResource(id = R.string.challenges_exercises_count, exCount) else stringResource(id = R.string.na),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -181,7 +184,7 @@ private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challe
                 )
                 val points = challenge?.rewardPoints ?: 0
                 Text(
-                    text = if (points > 0) "+$points pts" else "--",
+                    text = if (points > 0) "+" + stringResource(id = R.string.leaderboard_points_short_format, points) else stringResource(id = R.string.na),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -209,7 +212,7 @@ private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challe
 
             if ((challenge?.workout?.exercises?.isNotEmpty() == true)) {
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Hide details" else "View details")
+                    Text(if (expanded) stringResource(id = R.string.hide_details) else stringResource(id = R.string.view_details))
                 }
             }
 
@@ -227,9 +230,9 @@ private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challe
 @Composable
 private fun ChallengeStatusBadge(isActive: Boolean, isCompleted: Boolean) {
     val (label, color) = when {
-        isCompleted -> "Completed" to Color(0xFF4CAF50)
-        isActive -> "Started" to GoogleBlue
-        else -> "Inactive" to Color(0xFFF44336)
+        isCompleted -> stringResource(id = R.string.completed_label) to Color(0xFF4CAF50)
+        isActive -> stringResource(id = R.string.started_label) to GoogleBlue
+        else -> stringResource(id = R.string.inactive_label) to Color(0xFFF44336)
     }
 
     Box(
@@ -255,7 +258,7 @@ private fun ChallengeExerciseLine(exercise: ApiExercise) {
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = exercise.name ?: "Exercise",
+                text = exercise.name ?: stringResource(id = R.string.exercise_label),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -326,8 +329,9 @@ private fun EmptyChallengesState() {
                 )
             }
             Text(
-                text = "No challenges yet",
+                text = stringResource(id = R.string.no_challenges_yet),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(

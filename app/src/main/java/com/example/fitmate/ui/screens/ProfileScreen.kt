@@ -32,6 +32,7 @@ import com.example.fitmate.model.enums.GenderType
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.DateOfBirthPicker
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.delay
@@ -231,7 +232,7 @@ fun ProfileScreen() {
                                         )
                                     )
                                     Text(
-                                        "Total Points",
+                                        stringResource(id = com.example.fitmate.R.string.profile_total_points),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = Color.White.copy(alpha = 0.9f)
                                         )
@@ -288,7 +289,7 @@ fun ProfileScreen() {
                             }
 
                             Text(
-                                "Personal Information",
+                                stringResource(id = com.example.fitmate.R.string.profile_personal_information),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold
                                 )
@@ -298,7 +299,7 @@ fun ProfileScreen() {
                         ProfileTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = "Full Name",
+                            label = stringResource(id = com.example.fitmate.R.string.profile_full_name),
                             icon = Icons.Outlined.Person,
                             enabled = !isSaving
                         )
@@ -308,7 +309,7 @@ fun ProfileScreen() {
                         ProfileTextField(
                             value = height,
                             onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) height = it },
-                            label = "Height (cm)",
+                            label = stringResource(id = com.example.fitmate.R.string.profile_height_cm),
                             icon = Icons.Outlined.Height,
                             keyboardType = KeyboardType.Number,
                             enabled = !isSaving
@@ -319,7 +320,7 @@ fun ProfileScreen() {
                         ProfileTextField(
                             value = weight,
                             onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) weight = it },
-                            label = "Weight (kg)",
+                            label = stringResource(id = com.example.fitmate.R.string.profile_weight_kg),
                             icon = Icons.Outlined.MonitorWeight,
                             keyboardType = KeyboardType.Number,
                             enabled = !isSaving
@@ -440,7 +441,7 @@ fun ProfileScreen() {
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    "Save Changes",
+                                    stringResource(id = com.example.fitmate.R.string.profile_save_changes),
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White
@@ -452,6 +453,54 @@ fun ProfileScreen() {
                 }
 
                 Spacer(Modifier.height(24.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 2.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(bottom = 20.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Language,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                stringResource(id = com.example.fitmate.R.string.language),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+
+                        LanguageSelector()
+                    }
+                }
             }
         }
 
@@ -479,12 +528,12 @@ fun ProfileScreen() {
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
-                    Text(
-                        "Profile updated successfully!",
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                        Text(
+                            stringResource(id = com.example.fitmate.R.string.profile_success),
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                 }
             }
 
@@ -518,12 +567,12 @@ fun ProfileScreen() {
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
-                    Text(
-                        "Failed to update profile",
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                        Text(
+                            stringResource(id = com.example.fitmate.R.string.profile_error),
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                 }
             }
 
@@ -533,6 +582,43 @@ fun ProfileScreen() {
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LanguageSelector() {
+    val context = LocalContext.current
+    val activity = context as? android.app.Activity
+    val languages = listOf("English" to "en", "Português" to "pt")
+    val currentLocale = context.resources.configuration.locales[0]
+    var selectedIndex by remember { mutableStateOf(if (currentLocale.language == "pt") 1 else 0) }
+
+    TabRow(selectedTabIndex = selectedIndex) {
+        languages.forEachIndexed { index, (label, code) ->
+            Tab(
+                selected = selectedIndex == index,
+                onClick = {
+                    selectedIndex = index
+                    if (code != currentLocale.language) {
+                        activity?.let { setLocale(it, code) }
+                    }
+                },
+                text = { Text(label) }
+            )
+        }
+    }
+}
+
+private fun setLocale(activity: android.app.Activity, languageCode: String) {
+    val locale = java.util.Locale(languageCode)
+    java.util.Locale.setDefault(locale)
+    val prefs = activity.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+    prefs.edit().putString("language_code", languageCode).apply()
+    val resources = activity.resources
+    val config = resources.configuration
+    config.setLocale(locale)
+    resources.updateConfiguration(config, resources.displayMetrics)
+    activity.recreate()
 }
 
 @Composable
@@ -575,13 +661,19 @@ fun GenderDropdown(
     enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val options = GenderType.entries.map { it.label }
+    val options = GenderType.entries
+    val localizedSelected = when (selectedGender) {
+        GenderType.MALE.label -> stringResource(id = com.example.fitmate.R.string.gender_male)
+        GenderType.FEMALE.label -> stringResource(id = com.example.fitmate.R.string.gender_female)
+        GenderType.OTHER.label -> stringResource(id = com.example.fitmate.R.string.gender_other)
+        else -> selectedGender
+    }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = selectedGender,
+            value = localizedSelected,
             onValueChange = {},
-            label = { Text("Gender") },
+            label = { Text(stringResource(id = com.example.fitmate.R.string.profile_gender_label)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.Wc,
@@ -627,19 +719,25 @@ fun GenderDropdown(
                         ) {
                             Icon(
                                 imageVector = when (option) {
-                                    "Male" -> Icons.Outlined.Male
-                                    "Female" -> Icons.Outlined.Female
+                                    GenderType.MALE -> Icons.Outlined.Male
+                                    GenderType.FEMALE -> Icons.Outlined.Female
                                     else -> Icons.Outlined.Wc
                                 },
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Text(option)
+                            Text(
+                                when (option) {
+                                    GenderType.MALE -> stringResource(id = com.example.fitmate.R.string.gender_male)
+                                    GenderType.FEMALE -> stringResource(id = com.example.fitmate.R.string.gender_female)
+                                    GenderType.OTHER -> stringResource(id = com.example.fitmate.R.string.gender_other)
+                                }
+                            )
                         }
                     },
                     onClick = {
-                        onGenderSelected(option)
+                        onGenderSelected(option.label)
                         expanded = false
                     }
                 )
@@ -655,13 +753,19 @@ fun FitnessLevelDropdown(
     enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val levels = FitnessLevelType.entries.map { it.label }
+    val options = FitnessLevelType.entries
+    val localizedSelected = when (selectedLevel) {
+        FitnessLevelType.BEGINNER.label -> stringResource(id = com.example.fitmate.R.string.fitness_beginner)
+        FitnessLevelType.INTERMEDIATE.label -> stringResource(id = com.example.fitmate.R.string.fitness_intermediate)
+        FitnessLevelType.EXPERT.label -> stringResource(id = com.example.fitmate.R.string.fitness_expert)
+        else -> selectedLevel
+    }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = selectedLevel,
+            value = localizedSelected,
             onValueChange = {},
-            label = { Text("Fitness Level") },
+            label = { Text(stringResource(id = com.example.fitmate.R.string.profile_fitness_level_label)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.FitnessCenter,
@@ -698,7 +802,7 @@ fun FitnessLevelDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
-            levels.forEach { level ->
+            options.forEach { option ->
                 DropdownMenuItem(
                     text = {
                         Row(
@@ -706,21 +810,26 @@ fun FitnessLevelDropdown(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(
-                                imageVector = when (level) {
-                                    "Beginner" -> Icons.Outlined.SelfImprovement
-                                    "Intermediate" -> Icons.Outlined.DirectionsRun
-                                    "Advanced" -> Icons.Outlined.FitnessCenter
-                                    else -> Icons.Outlined.FitnessCenter
+                                imageVector = when (option) {
+                                    FitnessLevelType.BEGINNER -> Icons.Outlined.SelfImprovement
+                                    FitnessLevelType.INTERMEDIATE -> Icons.Outlined.DirectionsRun
+                                    FitnessLevelType.EXPERT -> Icons.Outlined.FitnessCenter
                                 },
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Text(level)
+                            Text(
+                                when (option) {
+                                    FitnessLevelType.BEGINNER -> stringResource(id = com.example.fitmate.R.string.fitness_beginner)
+                                    FitnessLevelType.INTERMEDIATE -> stringResource(id = com.example.fitmate.R.string.fitness_intermediate)
+                                    FitnessLevelType.EXPERT -> stringResource(id = com.example.fitmate.R.string.fitness_expert)
+                                }
+                            )
                         }
                     },
                     onClick = {
-                        onLevelSelected(level)
+                        onLevelSelected(option.label)
                         expanded = false
                     }
                 )

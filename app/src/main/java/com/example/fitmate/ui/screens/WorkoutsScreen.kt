@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.data.RetrofitHelper
@@ -89,7 +90,7 @@ fun WorkoutsScreen() {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Today's Workout",
+                        stringResource(id = com.example.fitmate.R.string.workouts_todays_workout),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -183,7 +184,7 @@ fun WorkoutsScreen() {
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            "Start Workout",
+                                            stringResource(id = com.example.fitmate.R.string.workouts_start_workout),
                                             style = MaterialTheme.typography.titleSmall.copy(
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White
@@ -217,7 +218,7 @@ fun WorkoutsScreen() {
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        "Generate New",
+                                        stringResource(id = com.example.fitmate.R.string.workouts_generate_new),
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -255,7 +256,7 @@ fun WorkoutsScreen() {
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        "Complete",
+                                        stringResource(id = com.example.fitmate.R.string.workouts_complete),
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -292,7 +293,7 @@ fun WorkoutsScreen() {
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        "Cancel",
+                                        stringResource(id = com.example.fitmate.R.string.cancel),
                                         style = MaterialTheme.typography.titleSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -306,7 +307,7 @@ fun WorkoutsScreen() {
 
                 item {
                     Text(
-                        "Exercises (${workout.exercises.size})",
+                        stringResource(id = com.example.fitmate.R.string.workouts_exercises_count, workout.exercises.size),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -340,7 +341,7 @@ fun WorkoutsScreen() {
             onDismissRequest = { showMuscleDialog = false },
             title = {
                 Text(
-                    "Choose Muscle Group",
+                    stringResource(id = com.example.fitmate.R.string.workouts_choose_muscle_group),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
@@ -392,7 +393,7 @@ fun WorkoutsScreen() {
             },
             confirmButton = {
                 TextButton(onClick = { showMuscleDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(id = com.example.fitmate.R.string.cancel))
                 }
             }
         )
@@ -482,14 +483,14 @@ fun GenerateWorkoutCard(onGenerateClick: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Generate Workout",
+                        stringResource(id = com.example.fitmate.R.string.workouts_generate_workout_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                     )
                     Text(
-                        "Tap to create your personalized workout",
+                        stringResource(id = com.example.fitmate.R.string.workouts_generate_workout_subtitle),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = Color.White.copy(alpha = 0.9f)
                         )
@@ -523,7 +524,7 @@ fun GeneratingWorkoutCard() {
                     strokeWidth = 3.dp
                 )
                 Text(
-                    "Generating your workout...",
+                    stringResource(id = com.example.fitmate.R.string.workouts_generating_progress),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -618,7 +619,7 @@ fun ExerciseCard(exercise: ApiExercise) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    exercise.name ?: "Unknown Exercise",
+                    exercise.name ?: stringResource(id = com.example.fitmate.R.string.workouts_unknown_exercise),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
@@ -635,7 +636,7 @@ fun ExerciseCard(exercise: ApiExercise) {
                     }
                 ) {
                     Text(
-                        exercise.difficulty ?: "N/A",
+                        exercise.difficulty ?: stringResource(id = com.example.fitmate.R.string.na),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Medium,
                             color = when (exercise.difficulty?.lowercase()) {
@@ -656,11 +657,11 @@ fun ExerciseCard(exercise: ApiExercise) {
             ) {
                 ExerciseDetail(
                     icon = Icons.Outlined.FitnessCenter,
-                    text = exercise.muscle?.replace("_", " ")?.replaceFirstChar { it.uppercase() } ?: "N/A"
+                    text = exercise.muscle?.replace("_", " ")?.replaceFirstChar { it.uppercase() } ?: stringResource(id = com.example.fitmate.R.string.na)
                 )
                 ExerciseDetail(
                     icon = Icons.Outlined.Construction,
-                    text = exercise.equipment ?: "N/A"
+                    text = exercise.equipment ?: stringResource(id = com.example.fitmate.R.string.na)
                 )
             }
 
@@ -682,7 +683,7 @@ fun ExerciseCard(exercise: ApiExercise) {
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            "Instructions",
+                            stringResource(id = com.example.fitmate.R.string.workouts_instructions_label),
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = GoogleBlue
@@ -787,7 +788,7 @@ fun PhotoCaptureDialog(
                     ) {
                         Icon(Icons.Filled.Close, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Cancelar")
+                        Text(stringResource(id = com.example.fitmate.R.string.cancel))
                     }
                 }
 
@@ -819,11 +820,11 @@ fun PhotoCaptureDialog(
                         if (isUploading) {
                             CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("A guardar...", color = Color.White)
+                            Text(stringResource(id = com.example.fitmate.R.string.workouts_saving_ellipsis), color = Color.White)
                         } else {
                             Icon(Icons.Filled.CameraAlt, contentDescription = null, tint = Color.White)
                             Spacer(Modifier.width(8.dp))
-                            Text("Capturar & Guardar", color = Color.White)
+                            Text(stringResource(id = com.example.fitmate.R.string.workouts_capture_and_save), color = Color.White)
                         }
                     }
                 }

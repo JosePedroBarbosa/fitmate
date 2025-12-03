@@ -24,7 +24,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
- 
+import androidx.compose.ui.res.stringResource
+
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.DailyWorkout
 import com.example.fitmate.model.enums.WorkoutStatus
@@ -33,6 +34,7 @@ import com.example.fitmate.ui.components.shimmerEffect
 import java.time.format.DateTimeFormatter
 import android.graphics.BitmapFactory
 import java.io.File
+import com.example.fitmate.R
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -61,7 +63,7 @@ fun WorkoutHistoryScreen() {
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Workout History",
+                        text = stringResource(id = R.string.drawer_workout_history),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -73,8 +75,9 @@ fun WorkoutHistoryScreen() {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
+                        val completedCount = workouts.count { it.first.status == WorkoutStatus.COMPLETED }
                         Text(
-                            text = "${workouts.count { it.first.status == WorkoutStatus.COMPLETED }} completed • ${workouts.size} total",
+                            text = stringResource(id = R.string.workouts_summary_format, completedCount, workouts.size),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -171,7 +174,7 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = workout.duration.ifBlank { "--" },
+                    text = workout.duration.ifBlank { stringResource(id = R.string.na) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -180,10 +183,10 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
             Spacer(Modifier.height(4.dp))
 
             if (workout.exercises.isNotEmpty()) {
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Hide details" else "View details")
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(if (expanded) stringResource(id = R.string.hide_details) else stringResource(id = R.string.view_details))
+                    }
                 }
-            }
 
             if (expanded) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -199,9 +202,9 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
 @Composable
 private fun StatusBadge(status: WorkoutStatus) {
     val (label, color) = when (status) {
-        WorkoutStatus.STARTED -> "Started" to GoogleBlue
-        WorkoutStatus.COMPLETED -> "Completed" to Color(0xFF4CAF50)
-        WorkoutStatus.CANCELLED -> "Cancelled" to Color(0xFFF44336)
+        WorkoutStatus.STARTED -> stringResource(id = R.string.started_label) to GoogleBlue
+        WorkoutStatus.COMPLETED -> stringResource(id = R.string.completed_label) to Color(0xFF4CAF50)
+        WorkoutStatus.CANCELLED -> stringResource(id = R.string.cancelled_label) to Color(0xFFF44336)
     }
 
     Box(
@@ -246,7 +249,7 @@ private fun ExerciseLine(exercise: ApiExercise) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = exercise.name ?: "Exercise",
+                    text = exercise.name ?: stringResource(id = R.string.exercise_label),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -309,9 +312,10 @@ private fun EmptyHistoryState() {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                text = "No workouts yet",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                Text(
+                    text = stringResource(id = R.string.no_workouts_yet),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(

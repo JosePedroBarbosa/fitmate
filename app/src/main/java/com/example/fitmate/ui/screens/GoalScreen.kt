@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,6 +33,7 @@ import kotlinx.coroutines.withContext
 import com.google.firebase.auth.FirebaseAuth
 import com.example.fitmate.data.local.DatabaseProvider
 import com.example.fitmate.data.local.entity.CachedGoalEntity
+import com.example.fitmate.R
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -159,7 +161,7 @@ fun GoalScreen() {
                         is MuscleGainGoal -> "${(currentGoal as MuscleGainGoal).initialMuscleMassPercent}%"
                         else -> "0"
                     },
-                    label = "Initial",
+                    label = stringResource(id = R.string.goal_initial_label),
                     gradient = Brush.linearGradient(
                         colors = listOf(GoogleBlue, GoogleBlueDark)
                     ),
@@ -173,7 +175,7 @@ fun GoalScreen() {
                         is MuscleGainGoal -> "${(currentGoal as MuscleGainGoal).targetMuscleMassPercent}%"
                         else -> "0"
                     },
-                    label = "Target",
+                    label = stringResource(id = R.string.goal_target_label),
                     gradient = Brush.linearGradient(
                         colors = listOf(GoogleBlueDark, GoogleBlue)
                     ),
@@ -307,14 +309,17 @@ fun CurrentGoalCard(
 
                     Column {
                         Text(
-                            goal.type.label,
+                            when (goal.type) {
+                                GoalType.WEIGHT_LOSS -> stringResource(id = R.string.goal_type_weight_loss)
+                                GoalType.MUSCLE_GAIN -> stringResource(id = R.string.goal_type_muscle_gain)
+                            },
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                         )
                         Text(
-                            "Current Goal",
+                            stringResource(id = R.string.goal_current_label),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = Color.White.copy(alpha = 0.8f)
                             )
@@ -333,7 +338,7 @@ fun CurrentGoalCard(
                         )
                     )
                     Text(
-                        "Completed",
+                        stringResource(id = R.string.completed_label),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = Color.White.copy(alpha = 0.9f),
                             fontWeight = FontWeight.Medium
@@ -368,8 +373,8 @@ fun CurrentGoalCard(
                         label = {
                             Text(
                                 when (goal.type) {
-                                    GoalType.WEIGHT_LOSS -> "Current Weight (kg)"
-                                    GoalType.MUSCLE_GAIN -> "Current Muscle Mass (%)"
+                                    GoalType.WEIGHT_LOSS -> stringResource(id = R.string.goal_current_weight_kg)
+                                    GoalType.MUSCLE_GAIN -> stringResource(id = R.string.goal_current_muscle_mass_pct)
                                 }
                             )
                         },
@@ -442,7 +447,7 @@ fun CurrentGoalCard(
                                 modifier = Modifier.size(20.dp)
                             )
                         } else {
-                            Text("Save Progress", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.goal_save_progress), color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 } else {
@@ -455,7 +460,7 @@ fun CurrentGoalCard(
                         colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue)
                     ) {
                         Text(
-                            "Update Progress",
+                            stringResource(id = R.string.goal_update_progress),
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -501,7 +506,7 @@ fun CurrentGoalCard(
                         )
                     } else {
                         Text(
-                            if (goal.progress >= 100) "Finish Goal" else "Cancel Goal",
+                            if (goal.progress >= 100) stringResource(id = R.string.goal_finish_goal) else stringResource(id = R.string.goal_cancel_goal),
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -599,7 +604,7 @@ fun CreateGoalSection(
                         )
                     }
                 }
-                Text("Create New Goal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(id = R.string.goal_create_new), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -609,14 +614,14 @@ fun CreateGoalSection(
 
             when (selectedGoalType) {
                 GoalType.WEIGHT_LOSS -> {
-                    StyledGoalInputField("Initial Weight (kg)", initialValue, Icons.Outlined.MonitorWeight, onInitialValueChange)
+                    StyledGoalInputField(stringResource(id = R.string.goal_initial_weight_kg), initialValue, Icons.Outlined.MonitorWeight, onInitialValueChange)
                     Spacer(Modifier.height(12.dp))
-                    StyledGoalInputField("Target Weight (kg)", targetValue, Icons.Outlined.Flag, onTargetValueChange)
+                    StyledGoalInputField(stringResource(id = R.string.goal_target_weight_kg), targetValue, Icons.Outlined.Flag, onTargetValueChange)
                 }
                 GoalType.MUSCLE_GAIN -> {
-                    StyledGoalInputField("Initial Muscle Mass (%)", initialValue, Icons.Outlined.FitnessCenter, onInitialValueChange)
+                    StyledGoalInputField(stringResource(id = R.string.goal_initial_muscle_mass_pct), initialValue, Icons.Outlined.FitnessCenter, onInitialValueChange)
                     Spacer(Modifier.height(12.dp))
-                    StyledGoalInputField("Target Muscle Mass (%)", targetValue, Icons.Outlined.Flag, onTargetValueChange)
+                    StyledGoalInputField(stringResource(id = R.string.goal_target_muscle_mass_pct), targetValue, Icons.Outlined.Flag, onTargetValueChange)
                 }
                 else -> {}
             }
@@ -632,7 +637,7 @@ fun CreateGoalSection(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Text("Save Goal", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = Color.White))
+                    Text(stringResource(id = R.string.goal_save_goal), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = Color.White))
                 }
             }
 
@@ -645,7 +650,7 @@ fun CreateGoalSection(
                 ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                        Text("Goal saved successfully!", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(id = R.string.goal_saved_success), color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -658,9 +663,14 @@ fun GoalTypeDropdown(selectedType: GoalType?, onTypeSelected: (GoalType) -> Unit
     var expanded by remember { mutableStateOf(false) }
 
     OutlinedTextField(
-        value = selectedType?.label ?: "",
+        value = selectedType?.let { type ->
+            when (type) {
+                GoalType.WEIGHT_LOSS -> stringResource(id = R.string.goal_type_weight_loss)
+                GoalType.MUSCLE_GAIN -> stringResource(id = R.string.goal_type_muscle_gain)
+            }
+        } ?: "",
         onValueChange = {},
-        label = { Text("Goal Type") },
+        label = { Text(stringResource(id = R.string.goal_type_label)) },
         leadingIcon = { Icon(Icons.Outlined.TrackChanges, contentDescription = null) },
         trailingIcon = {
             IconButton(onClick = { expanded = !expanded }) {
@@ -689,7 +699,12 @@ fun GoalTypeDropdown(selectedType: GoalType?, onTypeSelected: (GoalType) -> Unit
                             contentDescription = null,
                             tint = GoogleBlue
                         )
-                        Text(type.label)
+                        Text(
+                            when (type) {
+                                GoalType.WEIGHT_LOSS -> stringResource(id = R.string.goal_type_weight_loss)
+                                GoalType.MUSCLE_GAIN -> stringResource(id = R.string.goal_type_muscle_gain)
+                            }
+                        )
                     }
                 },
                 onClick = {

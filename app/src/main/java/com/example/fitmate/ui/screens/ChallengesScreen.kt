@@ -29,11 +29,13 @@ import com.example.fitmate.model.Challenge
 import com.example.fitmate.model.UserChallenge
 import com.example.fitmate.data.FirebaseRepository
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.example.fitmate.model.enums.ChallengeDifficulty
 import com.example.fitmate.model.ApiExercise
 import android.content.Intent
+import com.example.fitmate.R
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val AccentGreen = Color(0xFF06D6A0)
@@ -73,7 +75,7 @@ fun ChallengesScreen() {
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Today's Challenge",
+                        text = stringResource(id = R.string.challenges_today_title),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -115,7 +117,7 @@ fun ChallengesScreen() {
                             }
                         )
                     } ?: run {
-                        Text("No community challenge today", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(id = R.string.challenges_none_today), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -223,7 +225,7 @@ fun EnhancedChallengeCard(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = "Active",
+                            contentDescription = stringResource(id = R.string.cd_active),
                             tint = AccentGreen,
                             modifier = Modifier
                                 .padding(8.dp)
@@ -249,7 +251,7 @@ fun EnhancedChallengeCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Progress",
+                            stringResource(id = R.string.challenges_progress_label),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -299,7 +301,7 @@ fun EnhancedChallengeCard(
                     ) {
                         InfoChip(
                             icon = Icons.Outlined.FitnessCenter,
-                            text = "${challenge.exerciseCount} exercises"
+                            text = stringResource(id = R.string.challenges_exercises_count, challenge.exerciseCount)
                         )
                         InfoChip(
                             icon = Icons.Filled.EmojiEvents,
@@ -313,12 +315,12 @@ fun EnhancedChallengeCard(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "Install FitMate and join today's challenge!")
+                                    putExtra(Intent.EXTRA_TEXT, context.getString(R.string.challenges_share_text))
                                 }
-                                context.startActivity(Intent.createChooser(intent, "Invite a friend"))
+                                context.startActivity(Intent.createChooser(intent, context.getString(R.string.challenges_invite_chooser_title)))
                             },
                             shape = RoundedCornerShape(12.dp)
-                        ) { Text("Invite Friend") }
+                        ) { Text(stringResource(id = R.string.invite_friend)) }
                     }
                 }
 
@@ -327,7 +329,7 @@ fun EnhancedChallengeCard(
                         onClick = onStart,
                         colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue),
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text("Start") }
+                    ) { Text(stringResource(id = R.string.start_label)) }
                 } else if (isActiveForUser) {
                     val canComplete = userChallenge?.startedAt?.let { System.currentTimeMillis() - it >= 60 * 60 * 1000L } ?: false
                     Button(
@@ -335,10 +337,10 @@ fun EnhancedChallengeCard(
                         colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
                         shape = RoundedCornerShape(12.dp),
                         enabled = canComplete
-                    ) { Text("Complete") }
+                    ) { Text(stringResource(id = R.string.complete_label)) }
                 } else {
                     Text(
-                        "Completed",
+                        stringResource(id = R.string.completed_label),
                         style = MaterialTheme.typography.bodyMedium,
                         color = AccentGreen
                     )
@@ -347,7 +349,7 @@ fun EnhancedChallengeCard(
 
             if (userChallenge != null) {
                 Spacer(Modifier.height(12.dp))
-                TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Hide details" else "View details") }
+                TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) stringResource(id = R.string.hide_details) else stringResource(id = R.string.view_details)) }
             }
 
             if (expanded) {
@@ -394,7 +396,7 @@ private fun ChallengeExerciseLine(exercise: ApiExercise) {
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = exercise.name ?: "Exercise",
+                text = exercise.name ?: stringResource(id = R.string.exercise_label),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )

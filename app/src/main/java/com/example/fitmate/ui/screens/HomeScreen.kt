@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 import com.example.fitmate.data.FirebaseRepository
 import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
@@ -150,10 +152,10 @@ fun HomeScreen(navController: NavController) {
                         .shimmerEffect()
                 )
             } else {
-                val firstName = userProfile?.name?.split(" ")?.firstOrNull() ?: "User"
+                val firstName = userProfile?.name?.split(" ")?.firstOrNull() ?: stringResource(id = com.example.fitmate.R.string.home_user_fallback)
 
                 Text(
-                    "Welcome, $firstName! 👋",
+                    stringResource(id = com.example.fitmate.R.string.home_welcome_format, firstName),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
@@ -174,10 +176,10 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     StatCard(
-                        icon = Icons.Default.DirectionsRun,
+                        icon = Icons.AutoMirrored.Filled.DirectionsRun,
                         value = stepsToday.toString(),
-                        unit = "steps",
-                        label = "Steps Today",
+                        unit = stringResource(id = com.example.fitmate.R.string.unit_steps),
+                        label = stringResource(id = com.example.fitmate.R.string.steps_today),
                         gradient = Brush.linearGradient(
                             colors = listOf(GoogleBlue, GoogleBlueDark)
                         ),
@@ -214,10 +216,10 @@ fun HomeScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         StatCard(
-                            icon = Icons.Default.DirectionsRun,
+                            icon = Icons.AutoMirrored.Filled.DirectionsRun,
                             value = stepsToday.toString(),
                             unit = "",
-                            label = "Steps",
+                            label = stringResource(id = com.example.fitmate.R.string.steps_label),
                             gradient = Brush.linearGradient(
                                 colors = listOf(GoogleBlue, GoogleBlueDark)
                             ),
@@ -281,7 +283,7 @@ fun HomeScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Challenges",
+                    stringResource(id = com.example.fitmate.R.string.home_challenges_title),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
@@ -294,7 +296,7 @@ fun HomeScreen(navController: NavController) {
                         restoreState = true
                     }
                 }) {
-                    Text("View all")
+                    Text(stringResource(id = com.example.fitmate.R.string.view_all))
                 }
             }
 
@@ -318,8 +320,8 @@ fun HomeScreen(navController: NavController) {
                     val checked = userChallengesChecked.contains(ch.id)
                     val cta = if (!checked || !ch.isActive) null else when {
                         uc?.isCompleted == true -> null
-                        uc?.isActive == true && uc.isCompleted == false -> "Continue"
-                        else -> "Start"
+                        uc?.isActive == true && uc.isCompleted == false -> stringResource(id = com.example.fitmate.R.string.continue_label)
+                        else -> stringResource(id = com.example.fitmate.R.string.start_label)
                     }
                     ChallengeCard(
                         title = ch.title,
@@ -361,13 +363,13 @@ fun HomeScreen(navController: NavController) {
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    "No challenges available",
+                                    stringResource(id = com.example.fitmate.R.string.home_no_challenges),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    "Check back later or view all",
+                                    stringResource(id = com.example.fitmate.R.string.home_check_back_later),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -382,7 +384,7 @@ fun HomeScreen(navController: NavController) {
                                 },
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("View all")
+                                Text(stringResource(id = com.example.fitmate.R.string.view_all))
                             }
                         }
                     }
@@ -526,13 +528,13 @@ fun GoalProgressCard(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Set your goal",
+                            stringResource(id = com.example.fitmate.R.string.goal_set_your_goal),
                             color = Color.White,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Tap to create one",
+                            stringResource(id = com.example.fitmate.R.string.goal_tap_create_one),
                             color = Color.White.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -541,7 +543,10 @@ fun GoalProgressCard(
 
                 else -> {
                     val progress = goal!!.progress.coerceIn(0, 100)
-                    val typeLabel = goal!!.type.label
+                    val typeLabel = when (goal!!.type) {
+                        com.example.fitmate.model.enums.GoalType.WEIGHT_LOSS -> stringResource(id = com.example.fitmate.R.string.goal_type_weight_loss)
+                        com.example.fitmate.model.enums.GoalType.MUSCLE_GAIN -> stringResource(id = com.example.fitmate.R.string.goal_type_muscle_gain)
+                    }
 
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -569,7 +574,7 @@ fun GoalProgressCard(
 
                         Column {
                             Text(
-                                "Personal Goal",
+                                stringResource(id = com.example.fitmate.R.string.goal_personal_goal),
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = Color.White.copy(alpha = 0.95f),
                                     fontWeight = FontWeight.Medium
@@ -653,7 +658,7 @@ fun QuickWorkoutCard(
                 ) {
                     Column {
                         Text(
-                            "Today's Workout",
+                            stringResource(id = com.example.fitmate.R.string.workouts_todays_workout),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -672,7 +677,7 @@ fun QuickWorkoutCard(
                             }
                             currentWorkout != null -> {
                                 Text(
-                                    currentWorkout!!.title.ifBlank { "Unnamed Workout" },
+                                    currentWorkout!!.title.ifBlank { stringResource(id = com.example.fitmate.R.string.workouts_unnamed_workout) },
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = Color.White.copy(alpha = 0.9f)
                                     )
@@ -680,7 +685,7 @@ fun QuickWorkoutCard(
                             }
                             else -> {
                                 Text(
-                                    "No workout started",
+                                    stringResource(id = com.example.fitmate.R.string.workouts_no_workout_started),
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = Color.White.copy(alpha = 0.9f)
                                     )
@@ -743,7 +748,7 @@ fun QuickWorkoutCard(
                                 ),
                                 shape = RoundedCornerShape(20.dp)
                             ) {
-                                Text("Create workout")
+                                Text(stringResource(id = com.example.fitmate.R.string.workouts_create_workout))
                             }
                         }
                         else -> {
@@ -758,7 +763,7 @@ fun QuickWorkoutCard(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.PlayArrow,
-                                        contentDescription = "Open",
+                                        contentDescription = stringResource(id = com.example.fitmate.R.string.cd_open),
                                         tint = GoogleBlue,
                                         modifier = Modifier.size(24.dp)
                                     )

@@ -10,17 +10,20 @@ import kotlinx.coroutines.withContext
 import com.example.fitmate.data.FirebaseRepository
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.example.fitmate.R
 
 class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun doWork(): Result {
-        NotificationHelper.showReminder(applicationContext, "Workout Reminder", "Don't forget today's workout")
+        val title = applicationContext.getString(R.string.workout_reminder_title)
+        val body = applicationContext.getString(R.string.workout_reminder_body)
+        NotificationHelper.showReminder(applicationContext, title, body)
         val dao = DatabaseProvider.get(applicationContext).cachedNotificationDao()
         withContext(Dispatchers.IO) {
             dao.insert(
                 CachedNotificationEntity(
-                    title = "Workout Reminder",
-                    description = "Don't forget today's workout",
+                    title = title,
+                    description = body,
                     timestamp = System.currentTimeMillis(),
                     read = false,
                     type = "reminder"

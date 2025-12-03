@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -97,7 +98,7 @@ fun FindGymScreen() {
                 ) {
                     Marker(
                         state = MarkerState(position = userLocation!!),
-                        title = "You are here",
+                        title = stringResource(id = com.example.fitmate.R.string.find_gym_you_are_here),
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                     )
 
@@ -118,7 +119,7 @@ fun FindGymScreen() {
                 ) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
-                    Text("Getting your location...")
+                    Text(stringResource(id = com.example.fitmate.R.string.find_gym_getting_location))
                 }
             }
         }

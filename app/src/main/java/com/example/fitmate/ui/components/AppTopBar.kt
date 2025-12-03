@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -80,7 +81,7 @@ fun AppTopBar(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Person,
-                            contentDescription = "Profile",
+                            contentDescription = stringResource(id = com.example.fitmate.R.string.cd_profile),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp)
                         )
@@ -102,7 +103,7 @@ fun AppTopBar(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Notifications,
-                                contentDescription = "Notifications",
+                                contentDescription = stringResource(id = com.example.fitmate.R.string.cd_notifications),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -114,7 +115,7 @@ fun AppTopBar(
                         modifier = Modifier.width(320.dp)
                     ) {
                         Text(
-                            "Notifications",
+                            stringResource(id = com.example.fitmate.R.string.notifications_title),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -152,7 +153,7 @@ fun AppTopBar(
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
-                            Text("Read all notifications")
+                            Text(stringResource(id = com.example.fitmate.R.string.read_all_notifications))
                         }
                     }
                 }
@@ -337,12 +338,12 @@ private fun DrawerContent(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Profile Avatar",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(36.dp)
-                    )
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = stringResource(id = com.example.fitmate.R.string.cd_profile_avatar),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(36.dp)
+                        )
                 }
             }
 
@@ -361,7 +362,7 @@ private fun DrawerContent(
                 )
             } else {
                 Text(
-                    text = userProfile?.name ?: "Unknown User",
+                    text = userProfile?.name ?: stringResource(id = com.example.fitmate.R.string.unknown_user),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
@@ -380,7 +381,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.Person,
-            label = "Profile",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_profile),
             isSelected = selectedItem == "profile",
             onClick = {
                 selectedItem = "profile"
@@ -395,7 +396,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.CollectionsBookmark,
-            label = "Workout History",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_workout_history),
             isSelected = selectedItem == "workout_history",
             onClick = {
                 selectedItem = "workout_history"
@@ -410,7 +411,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.EmojiEvents,
-            label = "Challenges History",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_challenges_history),
             isSelected = selectedItem == "challenges_history",
             onClick = {
                 selectedItem = "challenges_history"
@@ -425,7 +426,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.EmojiEvents,
-            label = "Goal",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_goal),
             isSelected = selectedItem == "goal",
             onClick = {
                 selectedItem = "goal"
@@ -440,7 +441,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.LocationOn,
-            label = "Find Gym",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_find_gym),
             isSelected = selectedItem == "gym",
             onClick = {
                 selectedItem = "gym"
@@ -459,7 +460,7 @@ private fun DrawerContent(
 
         DrawerLinkItem(
             icon = Icons.Outlined.Logout,
-            label = "Logout",
+            label = stringResource(id = com.example.fitmate.R.string.drawer_logout),
             isSelected = false,
             isDanger = true,
             onClick = {
