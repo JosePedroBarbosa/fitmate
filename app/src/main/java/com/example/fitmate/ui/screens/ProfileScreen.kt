@@ -25,14 +25,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.fitmate.data.FirebaseRepository
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedUserEntity
 import com.example.fitmate.model.enums.FitnessLevelType
 import com.example.fitmate.model.enums.GenderType
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.ui.components.DateOfBirthPicker
+import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import kotlinx.coroutines.delay
 import com.example.fitmate.ui.components.shimmerEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -43,6 +49,9 @@ fun ProfileScreen() {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val appContext = context.applicationContext
 
     var name by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
@@ -55,8 +64,37 @@ fun ProfileScreen() {
     var showErrorMessage by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedUserDao().getUser(uid)
+                }
+                if (cached != null) {
+                    userProfile = UserProfile(
+                        uid = cached.uid,
+                        name = cached.name,
+                        email = cached.email ?: "",
+                        points = cached.points,
+                        height = cached.height,
+                        weight = cached.weight,
+                        dateOfBirth = cached.dateOfBirth,
+                        gender = cached.gender?.let { GenderType.fromLabel(it) },
+                        fitnessLevel = cached.fitnessLevel?.let { FitnessLevelType.fromLabel(it) }
+                    )
+                    name = cached.name
+                    height = cached.height?.toString() ?: ""
+                    weight = cached.weight?.toString() ?: ""
+                    dateOfBirth = cached.dateOfBirth ?: ""
+                    gender = cached.gender ?: ""
+                    fitnessLevel = cached.fitnessLevel ?: ""
+                    isLoading = false
+                }
+            } catch (_: Exception) { }
+        }
+
         FirebaseRepository.fetchUserProfile { profile ->
-            userProfile = profile
+            userProfile = profile ?: userProfile
             profile?.let {
                 name = it.name
                 height = it.height?.toString() ?: ""
@@ -65,11 +103,34 @@ fun ProfileScreen() {
                 gender = it.gender?.label ?: ""
                 fitnessLevel = it.fitnessLevel?.label ?: ""
             } ?: run {
-                name = auth.currentUser?.displayName ?: "Unknown"
-                height = ""
-                weight = ""
+                if (userProfile == null) {
+                    name = auth.currentUser?.displayName ?: "Unknown"
+                    height = ""
+                    weight = ""
+                }
             }
             isLoading = false
+
+            val fetchedUid = profile?.uid
+            if (fetchedUid != null && profile != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        DatabaseProvider.get(appContext).cachedUserDao().upsert(
+                            CachedUserEntity(
+                                uid = profile.uid,
+                                name = profile.name,
+                                email = profile.email,
+                                points = profile.points,
+                                height = profile.height,
+                                weight = profile.weight,
+                                dateOfBirth = profile.dateOfBirth,
+                                gender = profile.gender?.label,
+                                fitnessLevel = profile.fitnessLevel?.label
+                            )
+                        )
+                    } catch (_: Exception) { }
+                }
+            }
         }
     }
 
@@ -319,6 +380,23 @@ fun ProfileScreen() {
                                 showSuccessMessage = true
                                 showErrorMessage = false
                                 userProfile = updatedProfile
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        DatabaseProvider.get(appContext).cachedUserDao().upsert(
+                                            CachedUserEntity(
+                                                uid = updatedProfile.uid,
+                                                name = updatedProfile.name,
+                                                email = updatedProfile.email,
+                                                points = updatedProfile.points,
+                                                height = updatedProfile.height,
+                                                weight = updatedProfile.weight,
+                                                dateOfBirth = updatedProfile.dateOfBirth,
+                                                gender = updatedProfile.gender?.label,
+                                                fitnessLevel = updatedProfile.fitnessLevel?.label
+                                            )
+                                        )
+                                    } catch (_: Exception) { }
+                                }
                             } else {
                                 showErrorMessage = true
                                 showSuccessMessage = false

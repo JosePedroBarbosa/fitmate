@@ -2,7 +2,6 @@ package com.example.fitmate.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,8 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,32 +19,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
- 
 import com.example.fitmate.data.FirebaseRepository
-import com.example.fitmate.model.DailyWorkout
-import com.example.fitmate.model.enums.WorkoutStatus
 import com.example.fitmate.model.ApiExercise
+import com.example.fitmate.model.Challenge
+import com.example.fitmate.model.UserChallenge
 import com.example.fitmate.ui.components.shimmerEffect
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import android.graphics.BitmapFactory
-import java.io.File
 
 private val GoogleBlue = Color(0xFF1A73E8)
-private val GoogleBlueDark = Color(0xFF1557B0)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WorkoutHistoryScreen() {
+fun ChallengesHistoryScreen() {
     var isLoading by remember { mutableStateOf(true) }
-    var workouts by remember { mutableStateOf<List<Pair<DailyWorkout, String>>>(emptyList()) }
+    var itemsState by remember { mutableStateOf<List<Pair<UserChallenge, Challenge?>>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        FirebaseRepository.fetchAllWorkoutsForCurrentUser { list ->
-            workouts = list
+        FirebaseRepository.fetchAllUserChallengesForCurrentUser { list ->
+            itemsState = list
             isLoading = false
         }
     }
@@ -61,20 +55,23 @@ fun WorkoutHistoryScreen() {
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Workout History",
+                        text = "Challenges History",
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Icon(
-                            imageVector = Icons.Outlined.FitnessCenter,
+                            imageVector = Icons.Outlined.EmojiEvents,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "${workouts.count { it.first.status == WorkoutStatus.COMPLETED }} completed • ${workouts.size} total",
+                            text = "${itemsState.count { it.first.isCompleted }} completed • ${itemsState.size} total",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -84,13 +81,13 @@ fun WorkoutHistoryScreen() {
 
             if (isLoading) {
                 items(4) { _ ->
-                    HistoryCardShimmer()
+                    ChallengeHistoryCardShimmer()
                 }
-            } else if (workouts.isEmpty()) {
-                item { EmptyHistoryState() }
+            } else if (itemsState.isEmpty()) {
+                item { EmptyChallengesState() }
             } else {
-                items(workouts, key = { it.second }) { (workout, id) ->
-                    WorkoutHistoryItem(workout = workout)
+                items(itemsState, key = { it.first.challengeId }) { (uc, ch) ->
+                    ChallengeHistoryItem(userChallenge = uc, challenge = ch)
                 }
             }
         }
@@ -99,10 +96,17 @@ fun WorkoutHistoryScreen() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun WorkoutHistoryItem(workout: DailyWorkout) {
+private fun ChallengeHistoryItem(userChallenge: UserChallenge, challenge: Challenge?) {
     var expanded by remember { mutableStateOf(false) }
-    val dateText = remember(workout.date) {
-        workout.date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
+    val dateText = remember(challenge?.workout?.date, challenge?.id) {
+        val d = challenge?.workout?.date ?: run {
+            try {
+                LocalDate.parse(challenge?.id ?: LocalDate.now().toString())
+            } catch (_: Exception) {
+                LocalDate.now()
+            }
+        }
+        d.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
     }
 
     Surface(
@@ -113,8 +117,15 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
         color = MaterialTheme.colorScheme.surface
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.CalendarToday,
                         contentDescription = null,
@@ -127,59 +138,76 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                StatusBadge(status = workout.status)
+                ChallengeStatusBadge(isActive = userChallenge.isActive, isCompleted = userChallenge.isCompleted)
             }
 
             Text(
-                text = workout.title,
+                text = challenge?.title ?: "Challenge",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (workout.description.isNotBlank()) {
+            val desc = challenge?.description.orEmpty()
+            if (desc.isNotBlank()) {
                 Text(
-                    text = workout.description,
+                    text = desc,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            val photoPath = workout.photoPath
-            if (!photoPath.isNullOrBlank()) {
-                val file = File(photoPath)
-                if (file.exists()) {
-                    val bitmap = remember(photoPath) { BitmapFactory.decodeFile(photoPath) }
-                    if (bitmap != null) {
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Icon(
-                    imageVector = Icons.Outlined.Timer,
+                    imageVector = Icons.Outlined.FitnessCenter,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
+                val exCount = challenge?.exerciseCount ?: 0
                 Text(
-                    text = workout.duration.ifBlank { "--" },
+                    text = if (exCount > 0) "$exCount exercises" else "--",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Outlined.EmojiEvents,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                val points = challenge?.rewardPoints ?: 0
+                Text(
+                    text = if (points > 0) "+$points pts" else "--",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Spacer(Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = { (userChallenge.progress.coerceIn(0, 100)) / 100f },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(50)),
+                    color = GoogleBlue,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Text(
+                    text = "${userChallenge.progress.coerceIn(0, 100)}%",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = GoogleBlue
+                )
+            }
 
-            if (workout.exercises.isNotEmpty()) {
+            if ((challenge?.workout?.exercises?.isNotEmpty() == true)) {
                 TextButton(onClick = { expanded = !expanded }) {
                     Text(if (expanded) "Hide details" else "View details")
                 }
@@ -187,8 +215,8 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
 
             if (expanded) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    workout.exercises.forEach { ex ->
-                        ExerciseLine(ex)
+                    challenge?.workout?.exercises?.forEach { ex ->
+                        ChallengeExerciseLine(ex)
                     }
                 }
             }
@@ -197,11 +225,11 @@ private fun WorkoutHistoryItem(workout: DailyWorkout) {
 }
 
 @Composable
-private fun StatusBadge(status: WorkoutStatus) {
-    val (label, color) = when (status) {
-        WorkoutStatus.STARTED -> "Started" to GoogleBlue
-        WorkoutStatus.COMPLETED -> "Completed" to Color(0xFF4CAF50)
-        WorkoutStatus.CANCELLED -> "Cancelled" to Color(0xFFF44336)
+private fun ChallengeStatusBadge(isActive: Boolean, isCompleted: Boolean) {
+    val (label, color) = when {
+        isCompleted -> "Completed" to Color(0xFF4CAF50)
+        isActive -> "Started" to GoogleBlue
+        else -> "Inactive" to Color(0xFFF44336)
     }
 
     Box(
@@ -219,56 +247,44 @@ private fun StatusBadge(status: WorkoutStatus) {
 }
 
 @Composable
-private fun ExerciseLine(exercise: ApiExercise) {
+private fun ChallengeExerciseLine(exercise: ApiExercise) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(GoogleBlue.copy(alpha = 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.FitnessCenter,
-                    contentDescription = null,
-                    tint = GoogleBlue,
-                    modifier = Modifier.size(18.dp)
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = exercise.name ?: "Exercise",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            val meta = listOfNotNull(
+                exercise.muscle?.replace('_', ' '),
+                exercise.difficulty,
+                exercise.equipment
+            ).joinToString(" • ")
+            if (meta.isNotBlank()) {
+                Text(
+                    text = meta,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Column(modifier = Modifier.weight(1f)) {
+            val instr = exercise.instructions?.trim().orEmpty()
+            if (instr.isNotBlank()) {
                 Text(
-                    text = exercise.name ?: "Exercise",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = instr,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                val meta = listOfNotNull(
-                    exercise.muscle?.replace('_', ' '),
-                    exercise.difficulty,
-                    exercise.equipment
-                ).joinToString(" • ")
-                if (meta.isNotBlank()) {
-                    Text(
-                        text = meta,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
         }
     }
 }
 
 @Composable
-private fun HistoryCardShimmer() {
+private fun ChallengeHistoryCardShimmer() {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,7 +300,7 @@ private fun HistoryCardShimmer() {
 }
 
 @Composable
-private fun EmptyHistoryState() {
+private fun EmptyChallengesState() {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -304,21 +320,22 @@ private fun EmptyHistoryState() {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.FitnessCenter,
+                    imageVector = Icons.Outlined.EmojiEvents,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = "No workouts yet",
+                text = "No challenges yet",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Start a workout to see your history here.",
+                text = "Start a challenge to see your history here.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
+

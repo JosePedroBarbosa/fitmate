@@ -8,9 +8,7 @@ data class Challenge(
     val description: String,
     val rewardPoints: Int,
     val difficulty: ChallengeDifficulty,
-    val duration: String,
     val exerciseCount: Int,
-    val currentProgress: Int = 0,
-    val totalProgress: Int = 100,
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
+    val workout: DailyWorkout,
 )

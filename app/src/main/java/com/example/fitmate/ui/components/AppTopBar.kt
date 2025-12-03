@@ -40,6 +40,24 @@ fun AppTopBar(
     onMenuClick: () -> Unit
 ) {
     var showNotifications by remember { mutableStateOf(false) }
+    var notifications by remember { mutableStateOf<List<com.example.fitmate.data.local.entity.CachedNotificationEntity>>(emptyList()) }
+    var unreadCount by remember { mutableStateOf(0) }
+    val appContext = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(showNotifications) {
+        if (showNotifications) {
+            scope.launch(Dispatchers.IO) {
+                val dao = com.example.fitmate.data.local.DatabaseProvider.get(appContext).cachedNotificationDao()
+                val latest = dao.getLatest(20)
+                val count = dao.countUnread()
+                withContext(Dispatchers.Main) {
+                    notifications = latest
+                    unreadCount = count
+                }
+            }
+        }
+    }
 
     Surface(
         shadowElevation = 2.dp,
@@ -75,10 +93,10 @@ fun AppTopBar(
                     IconButton(onClick = { showNotifications = !showNotifications }) {
                         BadgedBox(
                             badge = {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                ) {
-                                    Text("3", style = MaterialTheme.typography.labelSmall)
+                                if (unreadCount > 0) {
+                                    Badge(containerColor = MaterialTheme.colorScheme.error) {
+                                        Text(unreadCount.toString(), style = MaterialTheme.typography.labelSmall)
+                                    }
                                 }
                             }
                         ) {
@@ -105,36 +123,36 @@ fun AppTopBar(
 
                         HorizontalDivider()
 
-                        NotificationItem(
-                            title = "New Challenge Available",
-                            description = "7-Day Active Challenge is now live!",
-                            time = "2h ago",
-                            onClick = { showNotifications = false }
-                        )
-
-                        NotificationItem(
-                            title = "Goal Progress",
-                            description = "You're 75% closer to your fitness goal",
-                            time = "5h ago",
-                            onClick = { showNotifications = false }
-                        )
-
-                        NotificationItem(
-                            title = "Workout Reminder",
-                            description = "Don't forget today's upper body workout",
-                            time = "1d ago",
-                            onClick = { showNotifications = false }
-                        )
+                        notifications.forEach { n ->
+                            NotificationItem(
+                                title = n.title,
+                                description = n.description,
+                                time = android.text.format.DateUtils.getRelativeTimeSpanString(n.timestamp).toString(),
+                                onClick = { showNotifications = false }
+                            )
+                        }
 
                         HorizontalDivider()
 
                         TextButton(
-                            onClick = { showNotifications = false },
+                            onClick = {
+                                scope.launch(Dispatchers.IO) {
+                                    val dao = com.example.fitmate.data.local.DatabaseProvider.get(appContext).cachedNotificationDao()
+                                    dao.markAllRead()
+                                    val latest = dao.getLatest(20)
+                                    val count = dao.countUnread()
+                                    withContext(Dispatchers.Main) {
+                                        notifications = latest
+                                        unreadCount = count
+                                        showNotifications = false
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
-                            Text("View all notifications")
+                            Text("Read all notifications")
                         }
                     }
                 }
@@ -219,14 +237,14 @@ fun AppNavigationDrawer(
     BoxWithConstraints {
         val drawerWidth = maxWidth * 0.65f
 
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            gesturesEnabled = currentRoute != "gyms",
-            drawerContent = {
-                ModalDrawerSheet(
-                    modifier = Modifier.width(drawerWidth),
-                    drawerShape = RoundedCornerShape(0.dp)
-                ) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = currentRoute != NavRoutes.GYMS,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(drawerWidth),
+                drawerShape = RoundedCornerShape(0.dp)
+            ) {
                     DrawerContent(
                         navController = navController,
                         onClose = {
@@ -383,6 +401,21 @@ private fun DrawerContent(
                 selectedItem = "workout_history"
                 onClose()
                 navController.navigate(NavRoutes.WORKOUT_HISTORY) {
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        )
+
+        DrawerLinkItem(
+            icon = Icons.Outlined.EmojiEvents,
+            label = "Challenges History",
+            isSelected = selectedItem == "challenges_history",
+            onClick = {
+                selectedItem = "challenges_history"
+                onClose()
+                navController.navigate(NavRoutes.CHALLENGES_HISTORY) {
                     popUpTo(navController.graph.startDestinationId) { saveState = true }
                     launchSingleTop = true
                     restoreState = true

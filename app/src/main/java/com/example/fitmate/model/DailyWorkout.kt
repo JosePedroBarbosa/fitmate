@@ -9,5 +9,6 @@ data class DailyWorkout(
     val description: String,
     val duration: String,
     val exercises: List<ApiExercise>,
-    val status: WorkoutStatus
+    val status: WorkoutStatus,
+    val photoPath: String? = null
 )

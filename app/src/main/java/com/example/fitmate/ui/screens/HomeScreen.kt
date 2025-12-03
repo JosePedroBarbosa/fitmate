@@ -37,6 +37,7 @@ import com.example.fitmate.data.local.entity.CachedGoalEntity
 import com.example.fitmate.data.local.entity.CachedUserEntity
 import com.example.fitmate.model.MuscleGainGoal
 import com.example.fitmate.model.WeightLossGoal
+import com.example.fitmate.model.Challenge
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,6 +80,7 @@ fun HomeScreen(navController: NavController) {
                 val cached = withContext(Dispatchers.IO) {
                     DatabaseProvider.get(appContext).cachedUserDao().getUser(uid)
                 }
+
                 if (cached != null) {
                     userProfile = UserProfile(
                         uid = cached.uid,
@@ -87,10 +89,11 @@ fun HomeScreen(navController: NavController) {
                     )
                     isLoadingUser = false
                 }
-            } catch (_: Exception) { /* ignore */ }
+
+            } catch (_: Exception) { }
         }
 
-        // 2) Depois faz fetch online e atualiza UI + cache (write-through)
+        // 2) Depois faz fetch online e atualiza UI + cache
         FirebaseRepository.fetchUserProfile { profile ->
             userProfile = profile ?: userProfile
             isLoadingUser = false
@@ -105,7 +108,7 @@ fun HomeScreen(navController: NavController) {
                                 email = profile.email
                             )
                         )
-                    } catch (_: Exception) { /* ignore */ }
+                    } catch (_: Exception) { }
                 }
             }
         }
@@ -133,7 +136,9 @@ fun HomeScreen(navController: NavController) {
                         )
                         .shimmerEffect()
                 )
+
                 Spacer(Modifier.height(8.dp))
+
                 Box(
                     modifier = Modifier
                         .width(250.dp)
@@ -146,6 +151,7 @@ fun HomeScreen(navController: NavController) {
                 )
             } else {
                 val firstName = userProfile?.name?.split(" ")?.firstOrNull() ?: "User"
+
                 Text(
                     "Welcome, $firstName! 👋",
                     style = MaterialTheme.typography.headlineMedium.copy(
@@ -177,16 +183,18 @@ fun HomeScreen(navController: NavController) {
                         ),
                         modifier = Modifier.weight(1f)
                     )
+
                     GoalProgressCard(
                         modifier = Modifier.weight(1f),
                         onNavigateToGoal = {
-                            navController.navigate("goal") {
-                                popUpTo("home") { saveState = true }
+                            navController.navigate(NavRoutes.GOAL) {
+                                popUpTo(NavRoutes.HOME) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         }
                     )
+
                     QuickWorkoutCard(modifier = Modifier.weight(1f), onNavigateToWorkouts = {
                         navController.navigate(NavRoutes.WORKOUTS) {
                             popUpTo(NavRoutes.HOME) { saveState = true }
@@ -194,6 +202,7 @@ fun HomeScreen(navController: NavController) {
                             restoreState = true
                         }
                     })
+
                 }
             } else {
                 Column(
@@ -214,17 +223,19 @@ fun HomeScreen(navController: NavController) {
                             ),
                             modifier = Modifier.weight(1f)
                         )
+
                         GoalProgressCard(
                             modifier = Modifier.weight(1f),
                             onNavigateToGoal = {
-                                navController.navigate("goal") {
-                                    popUpTo("home") { saveState = true }
+                                navController.navigate(NavRoutes.GOAL) {
+                                    popUpTo(NavRoutes.HOME) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
                             }
                         )
                     }
+
                     QuickWorkoutCard(modifier = Modifier.fillMaxWidth(), onNavigateToWorkouts = {
                         navController.navigate(NavRoutes.WORKOUTS) {
                             popUpTo(NavRoutes.HOME) { saveState = true }
@@ -232,6 +243,7 @@ fun HomeScreen(navController: NavController) {
                             restoreState = true
                         }
                     })
+
                 }
             }
         }
@@ -242,6 +254,27 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
         ) {
+            var recentChallenges by remember { mutableStateOf<List<Challenge>>(emptyList()) }
+            var loadingChallenges by remember { mutableStateOf(true) }
+
+            LaunchedEffect(Unit) {
+                FirebaseRepository.fetchRecentCommunityChallenges(limit = 2) { list ->
+                    recentChallenges = list
+                    loadingChallenges = false
+                }
+            }
+
+            var userChallenges by remember { mutableStateOf<Map<String, com.example.fitmate.model.UserChallenge?>>(emptyMap()) }
+            var userChallengesChecked by remember { mutableStateOf<Set<String>>(emptySet()) }
+            LaunchedEffect(recentChallenges) {
+                recentChallenges.forEach { ch ->
+                    FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc ->
+                        userChallenges = userChallenges.toMutableMap().apply { put(ch.id, uc) }
+                        userChallengesChecked = userChallengesChecked + ch.id
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -253,28 +286,108 @@ fun HomeScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                 )
-                TextButton(onClick = { }) {
+
+                TextButton(onClick = {
+                    navController.navigate(NavRoutes.CHALLENGES) {
+                        popUpTo(NavRoutes.HOME) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }) {
                     Text("View all")
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            ChallengeCard(
-                title = "7-Day Active Challenge",
-                description = "Stay active for 7 consecutive days",
-                rewardPoints = 150,
-                onAcceptClick = { }
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            ChallengeCard(
-                title = "Burn 3000 Calories",
-                description = "Burn 3000 calories this week",
-                rewardPoints = 150,
-                onAcceptClick = { }
-            )
+            if (loadingChallenges) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .shimmerEffect()
+                )
+            } else {
+                recentChallenges.take(2).forEachIndexed { idx, ch ->
+                    if (idx > 0) Spacer(Modifier.height(12.dp))
+                    val uc = userChallenges[ch.id]
+                    val checked = userChallengesChecked.contains(ch.id)
+                    val cta = if (!checked || !ch.isActive) null else when {
+                        uc?.isCompleted == true -> null
+                        uc?.isActive == true && uc.isCompleted == false -> "Continue"
+                        else -> "Start"
+                    }
+                    ChallengeCard(
+                        title = ch.title,
+                        description = ch.description,
+                        rewardPoints = ch.rewardPoints,
+                        ctaText = cta,
+                        onAcceptClick = if (cta != null && checked) {
+                            {
+                                navController.navigate(NavRoutes.CHALLENGES) {
+                                    popUpTo(NavRoutes.HOME) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        } else null
+                    )
+                }
+                if (recentChallenges.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 2.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.EmojiEvents,
+                                contentDescription = null,
+                                tint = GoogleBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    "No challenges available",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Check back later or view all",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    navController.navigate(NavRoutes.CHALLENGES) {
+                                        popUpTo(NavRoutes.HOME) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("View all")
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -304,6 +417,7 @@ fun GoalProgressCard(
             currentMuscleMassPercent = null,
             targetMuscleMassPercent = null
         )
+
         is MuscleGainGoal -> CachedGoalEntity(
             uid = uid,
             type = g.type,
@@ -326,6 +440,7 @@ fun GoalProgressCard(
             currentWeight = entity.currentWeight ?: (entity.initialWeight ?: 0.0),
             targetWeight = entity.targetWeight ?: (entity.initialWeight ?: 0.0)
         )
+
         com.example.fitmate.model.enums.GoalType.MUSCLE_GAIN -> MuscleGainGoal(
             createdAt = entity.createdAt,
             progress = entity.progress,

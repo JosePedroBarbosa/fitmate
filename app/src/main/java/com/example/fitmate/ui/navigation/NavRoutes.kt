@@ -9,4 +9,5 @@ object NavRoutes {
     const val GOAL = "goal"
     const val GYMS = "gyms"
     const val WORKOUT_HISTORY = "workout_history"
+    const val CHALLENGES_HISTORY = "challenges_history"
 }
