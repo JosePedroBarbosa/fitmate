@@ -152,7 +152,7 @@ fun AppTopBar(
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
-                            Text("View all notifications")
+                            Text("Read all notifications")
                         }
                     }
                 }
@@ -401,6 +401,21 @@ private fun DrawerContent(
                 selectedItem = "workout_history"
                 onClose()
                 navController.navigate(NavRoutes.WORKOUT_HISTORY) {
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        )
+
+        DrawerLinkItem(
+            icon = Icons.Outlined.EmojiEvents,
+            label = "Challenges History",
+            isSelected = selectedItem == "challenges_history",
+            onClick = {
+                selectedItem = "challenges_history"
+                onClose()
+                navController.navigate(NavRoutes.CHALLENGES_HISTORY) {
                     popUpTo(navController.graph.startDestinationId) { saveState = true }
                     launchSingleTop = true
                     restoreState = true

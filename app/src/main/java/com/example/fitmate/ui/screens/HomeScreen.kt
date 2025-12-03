@@ -37,6 +37,7 @@ import com.example.fitmate.data.local.entity.CachedGoalEntity
 import com.example.fitmate.data.local.entity.CachedUserEntity
 import com.example.fitmate.model.MuscleGainGoal
 import com.example.fitmate.model.WeightLossGoal
+import com.example.fitmate.model.Challenge
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -253,6 +254,27 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
         ) {
+            var recentChallenges by remember { mutableStateOf<List<Challenge>>(emptyList()) }
+            var loadingChallenges by remember { mutableStateOf(true) }
+
+            LaunchedEffect(Unit) {
+                FirebaseRepository.fetchRecentCommunityChallenges(limit = 2) { list ->
+                    recentChallenges = list
+                    loadingChallenges = false
+                }
+            }
+
+            var userChallenges by remember { mutableStateOf<Map<String, com.example.fitmate.model.UserChallenge?>>(emptyMap()) }
+            var userChallengesChecked by remember { mutableStateOf<Set<String>>(emptySet()) }
+            LaunchedEffect(recentChallenges) {
+                recentChallenges.forEach { ch ->
+                    FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc ->
+                        userChallenges = userChallenges.toMutableMap().apply { put(ch.id, uc) }
+                        userChallengesChecked = userChallengesChecked + ch.id
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -265,28 +287,107 @@ fun HomeScreen(navController: NavController) {
                     )
                 )
 
-                TextButton(onClick = { }) {
+                TextButton(onClick = {
+                    navController.navigate(NavRoutes.CHALLENGES) {
+                        popUpTo(NavRoutes.HOME) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }) {
                     Text("View all")
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            ChallengeCard(
-                title = "7-Day Active Challenge",
-                description = "Stay active for 7 consecutive days",
-                rewardPoints = 150,
-                onAcceptClick = { }
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            ChallengeCard(
-                title = "Burn 3000 Calories",
-                description = "Burn 3000 calories this week",
-                rewardPoints = 150,
-                onAcceptClick = { }
-            )
+            if (loadingChallenges) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .shimmerEffect()
+                )
+            } else {
+                recentChallenges.take(2).forEachIndexed { idx, ch ->
+                    if (idx > 0) Spacer(Modifier.height(12.dp))
+                    val uc = userChallenges[ch.id]
+                    val checked = userChallengesChecked.contains(ch.id)
+                    val cta = if (!checked || !ch.isActive) null else when {
+                        uc?.isCompleted == true -> null
+                        uc?.isActive == true && uc.isCompleted == false -> "Continue"
+                        else -> "Start"
+                    }
+                    ChallengeCard(
+                        title = ch.title,
+                        description = ch.description,
+                        rewardPoints = ch.rewardPoints,
+                        ctaText = cta,
+                        onAcceptClick = if (cta != null && checked) {
+                            {
+                                navController.navigate(NavRoutes.CHALLENGES) {
+                                    popUpTo(NavRoutes.HOME) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        } else null
+                    )
+                }
+                if (recentChallenges.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 2.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.EmojiEvents,
+                                contentDescription = null,
+                                tint = GoogleBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    "No challenges available",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Check back later or view all",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    navController.navigate(NavRoutes.CHALLENGES) {
+                                        popUpTo(NavRoutes.HOME) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("View all")
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(Modifier.height(24.dp))

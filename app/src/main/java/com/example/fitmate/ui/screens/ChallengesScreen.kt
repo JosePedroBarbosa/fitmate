@@ -1,5 +1,7 @@
 package com.example.fitmate.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -24,99 +26,39 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.fitmate.model.Challenge
+import com.example.fitmate.model.UserChallenge
+import com.example.fitmate.data.FirebaseRepository
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.example.fitmate.model.enums.ChallengeDifficulty
+import com.example.fitmate.model.ApiExercise
+import android.content.Intent
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val AccentGreen = Color(0xFF06D6A0)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChallengesScreen() {
-    val challenges = remember {
-        listOf(
-            Challenge(
-                id = "1",
-                title = "Full Body Blast",
-                description = "Complete this intense full-body workout routine",
-                rewardPoints = 150,
-                difficulty = ChallengeDifficulty.MEDIUM,
-                duration = "7 days",
-                exerciseCount = 8,
-                currentProgress = 42,
-                isActive = true
-            ),
-            Challenge(
-                id = "2",
-                title = "Core Crusher",
-                description = "Strengthen your core with this targeted workout",
-                rewardPoints = 200,
-                difficulty = ChallengeDifficulty.HARD,
-                duration = "10 days",
-                exerciseCount = 10,
-                currentProgress = 65,
-                isActive = true
-            ),
-            Challenge(
-                id = "3",
-                title = "Leg Day Legends",
-                description = "Build powerful legs with this comprehensive routine",
-                rewardPoints = 300,
-                difficulty = ChallengeDifficulty.EXPERT,
-                duration = "14 days",
-                exerciseCount = 12,
-                currentProgress = 0
-            ),
-            Challenge(
-                id = "4",
-                title = "Upper Body Power",
-                description = "Develop strength in your chest, back, and arms",
-                rewardPoints = 100,
-                difficulty = ChallengeDifficulty.EASY,
-                duration = "5 days",
-                exerciseCount = 6,
-                currentProgress = 0
-            ),
-            Challenge(
-                id = "5",
-                title = "HIIT Inferno",
-                description = "High-intensity interval training for maximum results",
-                rewardPoints = 120,
-                difficulty = ChallengeDifficulty.EXPERT,
-                duration = "7 days",
-                exerciseCount = 8,
-                currentProgress = 0
-            ),
-            Challenge(
-                id = "6",
-                title = "Beginner's Blueprint",
-                description = "Perfect starting point for fitness newcomers",
-                rewardPoints = 180,
-                difficulty = ChallengeDifficulty.EASY,
-                duration = "3 days",
-                exerciseCount = 5,
-                currentProgress = 0
-            ),
-            Challenge(
-                id = "7",
-                title = "Cardio Kickstart",
-                description = "Get your heart pumping with this cardio-focused workout",
-                rewardPoints = 250,
-                difficulty = ChallengeDifficulty.MEDIUM,
-                duration = "10 days",
-                exerciseCount = 7,
-                currentProgress = 0
-            ),
-            Challenge(
-                id = "8",
-                title = "Strength & Stamina",
-                description = "Build both strength and endurance in one session",
-                rewardPoints = 350,
-                difficulty = ChallengeDifficulty.HARD,
-                duration = "14 days",
-                exerciseCount = 10,
-                currentProgress = 0
-            )
-        )
+    var challenge by remember { mutableStateOf<Challenge?>(null) }
+    var userChallenge by remember { mutableStateOf<UserChallenge?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        FirebaseRepository.ensureTodayCommunityChallenge { _ ->
+            FirebaseRepository.fetchTodayCommunityChallenge { ch ->
+                challenge = ch
+                isLoading = false
+                if (ch != null) {
+                    FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc ->
+                        userChallenge = uc
+                    }
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -128,15 +70,54 @@ fun ChallengesScreen() {
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(challenges) { challenge ->
-                EnhancedChallengeCard(
-                    challenge = challenge,
-                    onAcceptClick = { /* TODO */ }
-                )
-            }
-
             item {
-                Spacer(Modifier.height(16.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Today's Challenge",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    val todayText = remember { java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d")) }
+                    Text(
+                        text = "$todayText",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            item {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                } else {
+                    challenge?.let { ch ->
+                        EnhancedChallengeCard(
+                            challenge = ch,
+                            userChallenge = userChallenge,
+                            onStart = {
+                                FirebaseRepository.startUserChallengeForCurrentUser(ch.id) { ok ->
+                                    if (ok) {
+                                        FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc -> userChallenge = uc }
+                                    }
+                                }
+                            },
+                            onComplete = {
+                                FirebaseRepository.markUserChallengeCompletedForCurrentUser(ch.id, ch.rewardPoints) { ok ->
+                                    if (ok) {
+                                        FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc -> userChallenge = uc }
+                                    }
+                                }
+                            }
+                        )
+                    } ?: run {
+                        Text("No community challenge today", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
             }
         }
     }
@@ -145,10 +126,18 @@ fun ChallengesScreen() {
 @Composable
 fun EnhancedChallengeCard(
     challenge: Challenge,
-    onAcceptClick: () -> Unit
+    userChallenge: UserChallenge?,
+    onStart: () -> Unit,
+    onComplete: () -> Unit
 ) {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    LaunchedEffect(userChallenge?.isActive, userChallenge?.isCompleted) {
+        expanded = userChallenge?.isActive == true && userChallenge.isCompleted == false
+    }
+    val progressValue = (userChallenge?.progress ?: 0).coerceIn(0, 100)
     val progress by animateFloatAsState(
-        targetValue = challenge.currentProgress / challenge.totalProgress.toFloat(),
+        targetValue = progressValue / 100f,
         animationSpec = tween(durationMillis = 1000),
         label = "progress"
     )
@@ -265,7 +254,7 @@ fun EnhancedChallengeCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "${challenge.currentProgress}%",
+                            "$progressValue%",
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.Bold
                             ),
@@ -298,34 +287,73 @@ fun EnhancedChallengeCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                val isActiveForUser = userChallenge?.isActive == true && userChallenge.isCompleted == false
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    InfoChip(
-                        icon = Icons.Outlined.Timer,
-                        text = challenge.duration
-                    )
-                    InfoChip(
-                        icon = Icons.Outlined.FitnessCenter,
-                        text = "${challenge.exerciseCount} exercises"
-                    )
-                    InfoChip(
-                        icon = Icons.Filled.EmojiEvents,
-                        text = "${challenge.rewardPoints}",
-                        tint = Color(0xFFFFB800)
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        InfoChip(
+                            icon = Icons.Outlined.FitnessCenter,
+                            text = "${challenge.exerciseCount} exercises"
+                        )
+                        InfoChip(
+                            icon = Icons.Filled.EmojiEvents,
+                            text = "${challenge.rewardPoints}",
+                            tint = Color(0xFFFFB800)
+                        )
+                    }
+
+                    if (isActiveForUser) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "Install FitMate and join today's challenge!")
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Invite a friend"))
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Invite Friend") }
+                    }
                 }
 
-                if (!challenge.isActive) {
+                if (userChallenge == null) {
                     Button(
-                        onClick = onAcceptClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = GoogleBlue
-                        ),
+                        onClick = onStart,
+                        colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue),
                         shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Start")
+                    ) { Text("Start") }
+                } else if (isActiveForUser) {
+                    val canComplete = userChallenge?.startedAt?.let { System.currentTimeMillis() - it >= 60 * 60 * 1000L } ?: false
+                    Button(
+                        onClick = onComplete,
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = canComplete
+                    ) { Text("Complete") }
+                } else {
+                    Text(
+                        "Completed",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AccentGreen
+                    )
+                }
+            }
+
+            if (userChallenge != null) {
+                Spacer(Modifier.height(12.dp))
+                TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Hide details" else "View details") }
+            }
+
+            if (expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    challenge.workout.exercises.forEach { ex ->
+                        ChallengeExerciseLine(ex)
                     }
                 }
             }
@@ -354,5 +382,42 @@ fun InfoChip(
             style = MaterialTheme.typography.bodySmall,
             color = tint
         )
+    }
+}
+
+@Composable
+private fun ChallengeExerciseLine(exercise: ApiExercise) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = exercise.name ?: "Exercise",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            val meta = listOfNotNull(
+                exercise.muscle?.replace('_', ' '),
+                exercise.difficulty,
+                exercise.equipment
+            ).joinToString(" • ")
+            if (meta.isNotBlank()) {
+                Text(
+                    text = meta,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            val instr = exercise.instructions?.trim().orEmpty()
+            if (instr.isNotBlank()) {
+                Text(
+                    text = instr,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }

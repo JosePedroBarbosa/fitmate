@@ -30,5 +30,6 @@ fun AppNavGraph(
         composable(NavRoutes.GOAL) { GoalScreen() }
         composable(NavRoutes.GYMS) { FindGymScreen() }
         composable(NavRoutes.WORKOUT_HISTORY) { WorkoutHistoryScreen() }
+        composable(NavRoutes.CHALLENGES_HISTORY) { ChallengesHistoryScreen() }
     }
 }

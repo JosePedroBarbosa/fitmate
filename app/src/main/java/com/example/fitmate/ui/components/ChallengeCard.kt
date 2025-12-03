@@ -22,7 +22,8 @@ fun ChallengeCard(
     title: String,
     description: String,
     rewardPoints: Int,
-    onAcceptClick: () -> Unit
+    ctaText: String? = "Accept Challenge",
+    onAcceptClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -77,29 +78,31 @@ fun ChallengeCard(
                 )
             }
 
-            Button(
-                onClick = onAcceptClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(GoogleBlue, GoogleBlueDark)
+            if (ctaText != null && onAcceptClick != null) {
+                Button(
+                    onClick = onAcceptClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp)
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(GoogleBlue, GoogleBlueDark)
+                            ),
+                            shape = RoundedCornerShape(10.dp)
                         ),
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                )
-            ) {
-                Text(
-                    text = "Accept Challenge",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = Color.White
-                )
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent
+                    )
+                ) {
+                    Text(
+                        text = ctaText,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = Color.White
+                    )
+                }
             }
         }
     }
