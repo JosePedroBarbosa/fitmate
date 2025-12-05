@@ -28,6 +28,12 @@ import com.example.fitmate.data.exercisesApi
 import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.model.DailyWorkout
 import com.example.fitmate.model.enums.WorkoutStatus
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedWorkoutEntity
+import com.example.fitmate.data.local.util.Converters
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -58,12 +64,54 @@ fun WorkoutsScreen() {
     var currentWorkoutId by remember { mutableStateOf<String?>(null) }
     var showPhotoDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedWorkoutDao().getWorkout(uid)
+                }
+                if (cached != null) {
+                    val exercises = Converters.toExercisesList(cached.exercisesJson) ?: emptyList()
+                    dailyWorkout = DailyWorkout(
+                        date = cached.date,
+                        title = cached.title,
+                        description = cached.description,
+                        duration = cached.duration,
+                        exercises = exercises,
+                        status = cached.status,
+                        photoPath = null
+                    )
+                    currentWorkoutId = cached.workoutId
+                }
+            } catch (_: Exception) { }
+        }
+
         FirebaseRepository.fetchCurrentStartedWorkout { workout, id ->
             if (workout != null) {
                 dailyWorkout = workout
                 currentWorkoutId = id
+                if (uid != null) {
+                    scope.launch(Dispatchers.IO) {
+                        val json = Converters.fromExercisesList(workout.exercises) ?: "[]"
+                        DatabaseProvider.get(appContext).cachedWorkoutDao().upsert(
+                            CachedWorkoutEntity(
+                                uid = uid,
+                                workoutId = id,
+                                date = workout.date,
+                                title = workout.title,
+                                description = workout.description,
+                                duration = workout.duration,
+                                exercisesJson = json,
+                                status = workout.status
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -153,6 +201,25 @@ fun WorkoutsScreen() {
                                     FirebaseRepository.saveWorkoutForCurrentUser(startedWorkout) { id ->
                                         currentWorkoutId = id
                                         dailyWorkout = startedWorkout
+                                        val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                        val appContext = context.applicationContext
+                                        if (uid != null) {
+                                            scope.launch(Dispatchers.IO) {
+                                                val json = Converters.fromExercisesList(startedWorkout.exercises) ?: "[]"
+                                                DatabaseProvider.get(appContext).cachedWorkoutDao().upsert(
+                                                    CachedWorkoutEntity(
+                                                        uid = uid,
+                                                        workoutId = id,
+                                                        date = startedWorkout.date,
+                                                        title = startedWorkout.title,
+                                                        description = startedWorkout.description,
+                                                        duration = startedWorkout.duration,
+                                                        exercisesJson = json,
+                                                        status = startedWorkout.status
+                                                    )
+                                                )
+                                            }
+                                        }
                                     }
                                 },
                                 modifier = Modifier
@@ -272,6 +339,15 @@ fun WorkoutsScreen() {
                                     }
                                     dailyWorkout = null
                                     currentWorkoutId = null
+                                    val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                    val appContext = context.applicationContext
+                                    if (uid != null) {
+                                        scope.launch(Dispatchers.IO) {
+                                            try {
+                                                DatabaseProvider.get(appContext).cachedWorkoutDao().delete(uid)
+                                            } catch (_: Exception) { }
+                                        }
+                                    }
                                 },
                                 modifier = Modifier
                                     .weight(1f)
@@ -331,6 +407,15 @@ fun WorkoutsScreen() {
                 dailyWorkout = null
                 currentWorkoutId = null
                 showPhotoDialog = false
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                val appContext = context.applicationContext
+                if (uid != null) {
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            DatabaseProvider.get(appContext).cachedWorkoutDao().delete(uid)
+                        } catch (_: Exception) { }
+                    }
+                }
             },
             onDismiss = { showPhotoDialog = false }
         )

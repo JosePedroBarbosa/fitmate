@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val work = PeriodicWorkRequestBuilder<ReminderWorker>(24, TimeUnit.HOURS).build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork("daily_reminder", ExistingPeriodicWorkPolicy.UPDATE, work)
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork("daily_reminder", ExistingPeriodicWorkPolicy.KEEP, work)
 
         setContent {
             FitmateTheme {

@@ -7,15 +7,16 @@ import com.example.fitmate.data.local.util.Converters
 import com.example.fitmate.model.enums.WorkoutStatus
 import java.time.LocalDate
 
-@Entity(tableName = "cached_workout")
+@Entity(tableName = "cached_workout_history")
 @TypeConverters(Converters::class)
-data class CachedWorkoutEntity(
-    @PrimaryKey val uid: String,
-    val workoutId: String? = null,
+data class CachedWorkoutHistoryEntity(
+    @PrimaryKey val id: String,
+    val uid: String,
     val date: LocalDate,
     val title: String,
     val description: String,
     val duration: String,
-    val exercisesJson: String, // armazenar lista como JSON para simplicidade
-    val status: WorkoutStatus
+    val exercisesJson: String,
+    val status: WorkoutStatus,
+    val photoPath: String? = null
 )

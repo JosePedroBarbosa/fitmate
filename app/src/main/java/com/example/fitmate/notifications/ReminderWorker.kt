@@ -17,6 +17,7 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
     override suspend fun doWork(): Result {
         val title = applicationContext.getString(R.string.workout_reminder_title)
         val body = applicationContext.getString(R.string.workout_reminder_body)
+        NotificationHelper.createChannels(applicationContext)
         NotificationHelper.showReminder(applicationContext, title, body)
         val dao = DatabaseProvider.get(applicationContext).cachedNotificationDao()
         withContext(Dispatchers.IO) {

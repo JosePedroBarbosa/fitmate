@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -28,6 +29,8 @@ import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.model.Challenge
 import com.example.fitmate.model.UserChallenge
 import com.example.fitmate.ui.components.shimmerEffect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -38,11 +41,90 @@ private val GoogleBlue = Color(0xFF1A73E8)
 fun ChallengesHistoryScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var itemsState by remember { mutableStateOf<List<Pair<UserChallenge, Challenge?>>>(emptyList()) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        try {
+            val appCtx = context.applicationContext
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            if (uid != null) {
+                val cached = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.example.fitmate.data.local.DatabaseProvider.get(appCtx).cachedUserChallengeDao().getAll(uid)
+                }
+                if (cached.isNotEmpty()) {
+                    val mapped = cached.map { e ->
+                        val exercises = com.example.fitmate.data.local.util.Converters.toExercisesList(e.workoutExercisesJson) ?: emptyList()
+                        val ch = com.example.fitmate.model.Challenge(
+                            id = e.challengeId,
+                            title = e.title,
+                            description = e.description,
+                            rewardPoints = e.rewardPoints,
+                            difficulty = try { com.example.fitmate.model.enums.ChallengeDifficulty.valueOf(e.difficulty) } catch (_: Exception) { com.example.fitmate.model.enums.ChallengeDifficulty.MEDIUM },
+                            exerciseCount = e.exerciseCount,
+                            isActive = e.isActive,
+                            workout = com.example.fitmate.model.DailyWorkout(
+                                date = e.workoutDate,
+                                title = e.workoutTitle,
+                                description = e.workoutDescription,
+                                duration = e.workoutDuration,
+                                exercises = exercises,
+                                status = e.workoutStatus,
+                                photoPath = e.workoutPhotoPath
+                            )
+                        )
+                        val uc = com.example.fitmate.model.UserChallenge(
+                            userId = e.userId,
+                            challengeId = e.challengeId,
+                            progress = e.progress,
+                            isCompleted = e.isCompleted,
+                            isActive = e.isActive,
+                            startedAt = e.startedAt
+                        )
+                        uc to ch
+                    }
+                    itemsState = mapped
+                    isLoading = false
+                }
+            }
+        } catch (_: Exception) { }
+
         FirebaseRepository.fetchAllUserChallengesForCurrentUser { list ->
             itemsState = list
             isLoading = false
+            val appCtx = context.applicationContext
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            if (uid != null) {
+                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val entities = list.mapNotNull { (uc, ch) ->
+                            ch?.let {
+                                com.example.fitmate.data.local.entity.CachedUserChallengeEntity(
+                                    userId = uc.userId,
+                                    challengeId = uc.challengeId,
+                                    progress = uc.progress,
+                                    isCompleted = uc.isCompleted,
+                                    isActive = uc.isActive,
+                                    startedAt = uc.startedAt,
+                                    title = it.title,
+                                    description = it.description,
+                                    rewardPoints = it.rewardPoints,
+                                    difficulty = it.difficulty.name,
+                                    exerciseCount = it.exerciseCount,
+                                    workoutDate = it.workout.date,
+                                    workoutTitle = it.workout.title,
+                                    workoutDescription = it.workout.description,
+                                    workoutDuration = it.workout.duration,
+                                    workoutExercisesJson = com.example.fitmate.data.local.util.Converters.fromExercisesList(it.workout.exercises) ?: "[]",
+                                    workoutStatus = it.workout.status,
+                                    workoutPhotoPath = it.workout.photoPath
+                                )
+                            }
+                        }
+                        com.example.fitmate.data.local.DatabaseProvider.get(appCtx).cachedUserChallengeDao().upsertAll(entities)
+                    } catch (_: Exception) { }
+                }
+            }
         }
     }
 

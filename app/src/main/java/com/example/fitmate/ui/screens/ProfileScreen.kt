@@ -98,27 +98,27 @@ fun ProfileScreen() {
             userProfile = profile ?: userProfile
             profile?.let {
                 name = it.name
-                height = it.height?.toString() ?: ""
-                weight = it.weight?.toString() ?: ""
-                dateOfBirth = it.dateOfBirth ?: ""
-                gender = it.gender?.label ?: ""
-                fitnessLevel = it.fitnessLevel?.label ?: ""
+                height = it.height?.toString() ?: height
+                weight = it.weight?.toString() ?: weight
+                dateOfBirth = it.dateOfBirth ?: dateOfBirth
+                gender = it.gender?.label ?: gender
+                fitnessLevel = it.fitnessLevel?.label ?: fitnessLevel
             } ?: run {
                 if (userProfile == null) {
                     name = auth.currentUser?.displayName ?: "Unknown"
-                    height = ""
-                    weight = ""
                 }
             }
             isLoading = false
 
             val fetchedUid = profile?.uid
-            if (fetchedUid != null && profile != null) {
+            if (profile != null) {
+                val roomUid = fetchedUid?.takeIf { it.isNotBlank() } ?: FirebaseAuth.getInstance().currentUser?.uid
+                if (roomUid == null || roomUid.isBlank()) return@fetchUserProfile
                 scope.launch(Dispatchers.IO) {
                     try {
                         DatabaseProvider.get(appContext).cachedUserDao().upsert(
                             CachedUserEntity(
-                                uid = profile.uid,
+                                uid = roomUid,
                                 name = profile.name,
                                 email = profile.email,
                                 points = profile.points,

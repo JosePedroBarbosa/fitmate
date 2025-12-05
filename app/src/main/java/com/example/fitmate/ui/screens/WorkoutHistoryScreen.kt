@@ -33,8 +33,11 @@ import com.example.fitmate.model.ApiExercise
 import com.example.fitmate.ui.components.shimmerEffect
 import java.time.format.DateTimeFormatter
 import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalContext
 import java.io.File
 import com.example.fitmate.R
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -44,11 +47,61 @@ private val GoogleBlueDark = Color(0xFF1557B0)
 fun WorkoutHistoryScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var workouts by remember { mutableStateOf<List<Pair<DailyWorkout, String>>>(emptyList()) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+        if (uid != null) {
+            try {
+                val cachedList = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.example.fitmate.data.local.DatabaseProvider.get(appContext).cachedWorkoutHistoryDao().getAll(uid)
+                }
+                if (cachedList.isNotEmpty()) {
+                    val mapped = cachedList.map { e ->
+                        val exercises = com.example.fitmate.data.local.util.Converters.toExercisesList(e.exercisesJson) ?: emptyList()
+                        Pair(
+                            com.example.fitmate.model.DailyWorkout(
+                                date = e.date,
+                                title = e.title,
+                                description = e.description,
+                                duration = e.duration,
+                                exercises = exercises,
+                                status = e.status,
+                                photoPath = e.photoPath
+                            ), e.id
+                        )
+                    }
+                    workouts = mapped
+                    isLoading = false
+                }
+            } catch (_: Exception) { }
+        }
+
         FirebaseRepository.fetchAllWorkoutsForCurrentUser { list ->
             workouts = list
             isLoading = false
+            if (uid != null) {
+                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val entities = list.map { (w, id) ->
+                            com.example.fitmate.data.local.entity.CachedWorkoutHistoryEntity(
+                                id = id,
+                                uid = uid,
+                                date = w.date,
+                                title = w.title,
+                                description = w.description,
+                                duration = w.duration,
+                                exercisesJson = com.example.fitmate.data.local.util.Converters.fromExercisesList(w.exercises) ?: "[]",
+                                status = w.status,
+                                photoPath = w.photoPath
+                            )
+                        }
+                        com.example.fitmate.data.local.DatabaseProvider.get(appContext).cachedWorkoutHistoryDao().upsertAll(entities)
+                    } catch (_: Exception) { }
+                }
+            }
         }
     }
 

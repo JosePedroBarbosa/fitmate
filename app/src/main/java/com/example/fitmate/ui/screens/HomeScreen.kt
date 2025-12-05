@@ -40,8 +40,13 @@ import com.example.fitmate.data.local.entity.CachedUserEntity
 import com.example.fitmate.model.MuscleGainGoal
 import com.example.fitmate.model.WeightLossGoal
 import com.example.fitmate.model.Challenge
-import com.google.firebase.auth.FirebaseAuth
+import com.example.fitmate.data.local.entity.CachedChallengeEntity
+import com.example.fitmate.data.local.util.Converters
+import com.example.fitmate.model.enums.ChallengeDifficulty
+import com.example.fitmate.data.local.entity.CachedWorkoutEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
@@ -260,9 +265,67 @@ fun HomeScreen(navController: NavController) {
             var loadingChallenges by remember { mutableStateOf(true) }
 
             LaunchedEffect(Unit) {
+                val appContext = context.applicationContext
+                try {
+                    val cached = withContext(Dispatchers.IO) {
+                        DatabaseProvider.get(appContext).cachedChallengeDao().getRecent(2)
+                    }
+                    if (cached.isNotEmpty()) {
+                        recentChallenges = cached.map { e ->
+                            val exercises = Converters.toExercisesList(e.workoutExercisesJson) ?: emptyList()
+                            Challenge(
+                                id = e.id,
+                                title = e.title,
+                                description = e.description,
+                                rewardPoints = e.rewardPoints,
+                                difficulty = try { ChallengeDifficulty.valueOf(e.difficulty) } catch (_: Exception) { ChallengeDifficulty.MEDIUM },
+                                exerciseCount = e.exerciseCount,
+                                isActive = e.isActive,
+                                workout = DailyWorkout(
+                                    date = e.workoutDate,
+                                    title = e.workoutTitle,
+                                    description = e.workoutDescription,
+                                    duration = e.workoutDuration,
+                                    exercises = exercises,
+                                    status = e.workoutStatus,
+                                    photoPath = e.workoutPhotoPath
+                                )
+                            )
+                        }
+                        loadingChallenges = false
+                    }
+                } catch (_: Exception) { }
+
                 FirebaseRepository.fetchRecentCommunityChallenges(limit = 2) { list ->
                     recentChallenges = list
                     loadingChallenges = false
+                    val appCtx = context.applicationContext
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val dao = DatabaseProvider.get(appCtx).cachedChallengeDao()
+                            list.forEach { ch ->
+                                val json = Converters.fromExercisesList(ch.workout.exercises) ?: "[]"
+                                dao.upsert(
+                                    CachedChallengeEntity(
+                                        id = ch.id,
+                                        title = ch.title,
+                                        description = ch.description,
+                                        rewardPoints = ch.rewardPoints,
+                                        difficulty = ch.difficulty.name,
+                                        exerciseCount = ch.exerciseCount,
+                                        isActive = ch.isActive,
+                                        workoutDate = ch.workout.date,
+                                        workoutTitle = ch.workout.title,
+                                        workoutDescription = ch.workout.description,
+                                        workoutDuration = ch.workout.duration,
+                                        workoutExercisesJson = json,
+                                        workoutStatus = ch.workout.status,
+                                        workoutPhotoPath = ch.workout.photoPath
+                                    )
+                                )
+                            }
+                        } catch (_: Exception) { }
+                    }
                 }
             }
 
@@ -621,11 +684,57 @@ fun QuickWorkoutCard(
 ) {
     var currentWorkout by remember { mutableStateOf<DailyWorkout?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        FirebaseRepository.fetchCurrentStartedWorkout { workout, _ ->
-            currentWorkout = workout
-            isLoading = false
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val appContext = context.applicationContext
+        if (uid != null) {
+            try {
+                val cached = withContext(Dispatchers.IO) {
+                    DatabaseProvider.get(appContext).cachedWorkoutDao().getWorkout(uid)
+                }
+                if (cached != null) {
+                    val exercises = Converters.toExercisesList(cached.exercisesJson) ?: emptyList()
+                    currentWorkout = DailyWorkout(
+                        date = cached.date,
+                        title = cached.title,
+                        description = cached.description,
+                        duration = cached.duration,
+                        exercises = exercises,
+                        status = cached.status,
+                        photoPath = null
+                    )
+                    isLoading = false
+                }
+            } catch (_: Exception) { }
+        }
+
+        FirebaseRepository.fetchCurrentStartedWorkout { workout, id ->
+            if (workout != null) {
+                currentWorkout = workout
+                isLoading = false
+                if (uid != null) {
+                    scope.launch(Dispatchers.IO) {
+                        val json = Converters.fromExercisesList(workout.exercises) ?: "[]"
+                        DatabaseProvider.get(appContext).cachedWorkoutDao().upsert(
+                            CachedWorkoutEntity(
+                                uid = uid,
+                                workoutId = id,
+                                date = workout.date,
+                                title = workout.title,
+                                description = workout.description,
+                                duration = workout.duration,
+                                exercisesJson = json,
+                                status = workout.status
+                            )
+                        )
+                    }
+                }
+            } else {
+                isLoading = false
+            }
         }
     }
 

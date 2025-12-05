@@ -35,7 +35,13 @@ import kotlinx.coroutines.withContext
 import com.example.fitmate.model.enums.ChallengeDifficulty
 import com.example.fitmate.model.ApiExercise
 import android.content.Intent
+import androidx.compose.material3.HorizontalDivider
 import com.example.fitmate.R
+import com.example.fitmate.data.local.DatabaseProvider
+import com.example.fitmate.data.local.entity.CachedChallengeEntity
+import com.example.fitmate.data.local.util.Converters
+import com.example.fitmate.model.DailyWorkout
+import kotlinx.coroutines.launch
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val AccentGreen = Color(0xFF06D6A0)
@@ -48,13 +54,68 @@ fun ChallengesScreen() {
     var userChallenge by remember { mutableStateOf<UserChallenge?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
+        try {
+            val appContext = context.applicationContext
+            val todayId = java.time.LocalDate.now().toString()
+            val cached = withContext(Dispatchers.IO) {
+                DatabaseProvider.get(appContext).cachedChallengeDao().getById(todayId)
+            }
+            if (cached != null) {
+                val exercises = Converters.toExercisesList(cached.workoutExercisesJson) ?: emptyList()
+                challenge = Challenge(
+                    id = cached.id,
+                    title = cached.title,
+                    description = cached.description,
+                    rewardPoints = cached.rewardPoints,
+                    difficulty = try { ChallengeDifficulty.valueOf(cached.difficulty) } catch (_: Exception) { ChallengeDifficulty.MEDIUM },
+                    exerciseCount = cached.exerciseCount,
+                    isActive = cached.isActive,
+                    workout = DailyWorkout(
+                        date = cached.workoutDate,
+                        title = cached.workoutTitle,
+                        description = cached.workoutDescription,
+                        duration = cached.workoutDuration,
+                        exercises = exercises,
+                        status = cached.workoutStatus,
+                        photoPath = cached.workoutPhotoPath
+                    )
+                )
+                isLoading = false
+            }
+        } catch (_: Exception) { }
+
         FirebaseRepository.ensureTodayCommunityChallenge { _ ->
             FirebaseRepository.fetchTodayCommunityChallenge { ch ->
                 challenge = ch
                 isLoading = false
                 if (ch != null) {
+                    try {
+                        val appCtx = context.applicationContext
+                        val json = Converters.fromExercisesList(ch.workout.exercises) ?: "[]"
+                        scope.launch(Dispatchers.IO) {
+                            DatabaseProvider.get(appCtx).cachedChallengeDao().upsert(
+                                CachedChallengeEntity(
+                                    id = ch.id,
+                                    title = ch.title,
+                                    description = ch.description,
+                                    rewardPoints = ch.rewardPoints,
+                                    difficulty = ch.difficulty.name,
+                                    exerciseCount = ch.exerciseCount,
+                                    isActive = ch.isActive,
+                                    workoutDate = ch.workout.date,
+                                    workoutTitle = ch.workout.title,
+                                    workoutDescription = ch.workout.description,
+                                    workoutDuration = ch.workout.duration,
+                                    workoutExercisesJson = json,
+                                    workoutStatus = ch.workout.status,
+                                    workoutPhotoPath = ch.workout.photoPath
+                                )
+                            )
+                        }
+                    } catch (_: Exception) { }
                     FirebaseRepository.fetchUserChallengeForCurrentUser(ch.id) { uc ->
                         userChallenge = uc
                     }
@@ -280,7 +341,11 @@ fun EnhancedChallengeCard(
 
             Spacer(Modifier.height(16.dp))
 
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(
+                Modifier,
+                DividerDefaults.Thickness,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
 
             Spacer(Modifier.height(16.dp))
 
