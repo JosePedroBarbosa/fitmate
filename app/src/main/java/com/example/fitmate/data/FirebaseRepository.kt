@@ -18,12 +18,18 @@ import com.example.fitmate.model.enums.ChallengeDifficulty
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import java.io.File
 import java.time.LocalDate
 import com.example.fitmate.data.exercisesApi
 import com.example.fitmate.data.RetrofitHelper
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 object FirebaseRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -407,6 +413,52 @@ object FirebaseRepository {
             .addOnFailureListener { e ->
                 onResult(emptyList())
             }
+    }
+
+    fun subscribeTopUsersByPoints(limit: Int = 10): Flow<List<UserProfile>> = callbackFlow {
+        val ref = database.child("users")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { child ->
+                    val key = child.key ?: ""
+                    val uidValue = child.child("uid").getValue(String::class.java) ?: key
+                    val name = child.child("name").getValue(String::class.java) ?: ""
+                    val email = child.child("email").getValue(String::class.java) ?: ""
+                    val rawPoints = child.child("points").value
+                    val points = when (rawPoints) {
+                        is Long -> rawPoints.toInt()
+                        is Double -> rawPoints.toInt()
+                        is Int -> rawPoints
+                        is String -> rawPoints.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val height = child.child("height").getValue(Int::class.java)
+                    val weight = child.child("weight").getValue(Double::class.java)
+                    val dateOfBirth = child.child("dateOfBirth").getValue(String::class.java)
+                    val genderStr = child.child("gender").getValue(String::class.java)
+                    val fitnessStr = child.child("fitnessLevel").getValue(String::class.java)
+                    UserProfile(
+                        uid = uidValue,
+                        name = name,
+                        email = email,
+                        points = points,
+                        height = height,
+                        weight = weight,
+                        dateOfBirth = dateOfBirth,
+                        gender = genderStr?.let { GenderType.fromLabel(it) },
+                        fitnessLevel = fitnessStr?.let { FitnessLevelType.fromLabel(it) }
+                    )
+                }.sortedByDescending { it.points }.take(limit)
+                trySend(list)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

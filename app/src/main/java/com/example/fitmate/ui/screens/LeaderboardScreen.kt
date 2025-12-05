@@ -36,9 +36,12 @@ fun LeaderboardScreen() {
     var isLoading by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val appContext = context.applicationContext
+
+    val topUsersFlow = remember { FirebaseRepository.subscribeTopUsersByPoints(limit = 10) }
+    val topProfiles by topUsersFlow.collectAsState(initial = emptyList())
 
     LaunchedEffect(Unit) {
-        val appContext = context.applicationContext
         val cached = try {
             withContext(Dispatchers.IO) {
                 DatabaseProvider.get(appContext).cachedLeaderboardDao().getAll()
@@ -58,9 +61,27 @@ fun LeaderboardScreen() {
             isLoading = false
         }
 
-        FirebaseRepository.fetchTopUsersByPoints { users ->
-            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-            val mapped = users.take(10).mapIndexed { index, u ->
+    }
+
+    LaunchedEffect(topProfiles) {
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (topProfiles.isEmpty()) {
+            FirebaseRepository.fetchUserProfile { profile ->
+                val single = profile?.let {
+                    listOf(
+                        LeaderboardUser(
+                            name = it.name,
+                            points = it.points,
+                            rank = 1,
+                            isCurrentUser = true
+                        )
+                    )
+                } ?: emptyList()
+                leaderboardUsers = single
+                isLoading = false
+            }
+        } else {
+            val mapped = topProfiles.take(10).mapIndexed { index, u ->
                 LeaderboardUser(
                     name = u.name,
                     points = u.points,
@@ -68,37 +89,20 @@ fun LeaderboardScreen() {
                     isCurrentUser = u.uid == currentUid
                 )
             }
-            if (mapped.isEmpty()) {
-                FirebaseRepository.fetchUserProfile { profile ->
-                    val single = profile?.let {
-                        listOf(
-                            LeaderboardUser(
-                                name = it.name,
-                                points = it.points,
-                                rank = 1,
-                                isCurrentUser = true
-                            )
-                        )
-                    } ?: emptyList()
-                    leaderboardUsers = single
-                    isLoading = false
+            leaderboardUsers = mapped
+            isLoading = false
+            scope.launch(Dispatchers.IO) {
+                val dao = DatabaseProvider.get(appContext).cachedLeaderboardDao()
+                val toSave = topProfiles.take(10).mapIndexed { index, u ->
+                    CachedLeaderboardEntryEntity(
+                        rank = index + 1,
+                        uid = u.uid,
+                        name = u.name,
+                        points = u.points
+                    )
                 }
-            } else {
-                leaderboardUsers = mapped
-                isLoading = false
-                scope.launch(Dispatchers.IO) {
-                    val dao = DatabaseProvider.get(appContext).cachedLeaderboardDao()
-                    val toSave = users.take(10).mapIndexed { index, u ->
-                        CachedLeaderboardEntryEntity(
-                            rank = index + 1,
-                            uid = u.uid,
-                            name = u.name,
-                            points = u.points
-                        )
-                    }
-                    dao.clear()
-                    dao.upsertAll(toSave)
-                }
+                dao.clear()
+                dao.upsertAll(toSave)
             }
         }
     }
