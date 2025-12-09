@@ -1,5 +1,6 @@
 package com.example.fitmate.ui.screens
 
+import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -49,6 +50,8 @@ import kotlinx.coroutines.withContext
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.livedata.observeAsState
+import com.example.fitmate.sensors.StepsLiveData
 
 private val GoogleBlue = Color(0xFF1A73E8)
 private val GoogleBlueDark = Color(0xFF1557B0)
@@ -58,26 +61,18 @@ private val GoogleBlueDark = Color(0xFF1557B0)
 fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoadingUser by remember { mutableStateOf(true) }
+    
+    // Observar LiveData dos passos
+    val stepsToday by StepsLiveData.steps.observeAsState(initial = 0)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var stepsToday by remember { mutableStateOf(0) }
-
-    val stepCounterManager = remember {
-        StepCounterManager(context) { steps ->
-            stepsToday = steps
-        }
-    }
-
-    DisposableEffect(Unit) {
-        stepCounterManager.start()
-
-        onDispose {
-            stepCounterManager.stop()
-        }
-    }
 
     LaunchedEffect(Unit) {
+        val intent = Intent(context, com.example.fitmate.sensors.FitnessTrackingService::class.java)
+        intent.action = com.example.fitmate.sensors.FitnessTrackingService.ACTION_START
+        context.startService(intent)
+
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         val appContext = context.applicationContext
 

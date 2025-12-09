@@ -464,6 +464,10 @@ private fun DrawerContent(
             isSelected = false,
             isDanger = true,
             onClick = {
+                val serviceIntent = Intent(context, com.example.fitmate.sensors.FitnessTrackingService::class.java)
+                serviceIntent.action = com.example.fitmate.sensors.FitnessTrackingService.ACTION_STOP
+                context.startService(serviceIntent)
+                
                 FirebaseRepository.logout()
                 val intent = Intent(context, AuthActivity::class.java)
                 context.startActivity(intent)
