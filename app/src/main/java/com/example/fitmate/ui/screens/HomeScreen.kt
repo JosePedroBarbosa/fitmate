@@ -32,7 +32,6 @@ import com.example.fitmate.model.Goal
 import com.example.fitmate.model.UserProfile
 import com.example.fitmate.model.DailyWorkout
 import com.example.fitmate.ui.navigation.NavRoutes
-import com.example.fitmate.sensors.StepCounterManager
 import com.example.fitmate.ui.components.shimmerEffect
 import com.example.fitmate.ui.components.*
 import com.example.fitmate.data.local.DatabaseProvider
@@ -48,7 +47,6 @@ import com.example.fitmate.data.local.entity.CachedWorkoutEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.livedata.observeAsState
 import com.example.fitmate.sensors.StepsLiveData

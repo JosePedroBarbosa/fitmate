@@ -3,6 +3,7 @@ package com.example.fitmate.ui.activities
 import android.os.Bundle
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +29,10 @@ class MainActivity : ComponentActivity() {
         applySavedLocale()
 
         enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            requestPermissions(arrayOf(android.Manifest.permission.ACTIVITY_RECOGNITION), 1)
+        }
 
         NotificationHelper.createChannels(this)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
