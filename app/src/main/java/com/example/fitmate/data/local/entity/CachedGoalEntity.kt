@@ -10,11 +10,9 @@ data class CachedGoalEntity(
     val type: GoalType,
     val progress: Int,
     val createdAt: Long,
-    // Weight loss
     val initialWeight: Double? = null,
     val currentWeight: Double? = null,
     val targetWeight: Double? = null,
-    // Muscle gain
     val initialMuscleMassPercent: Double? = null,
     val currentMuscleMassPercent: Double? = null,
     val targetMuscleMassPercent: Double? = null

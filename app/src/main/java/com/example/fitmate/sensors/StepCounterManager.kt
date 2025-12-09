@@ -68,7 +68,6 @@ class StepCounterManager(
                 remove("initial_steps")
                 commit()
             }
-            // Forçar atualização a 0 no novo dia
             onStepsChanged(0)
         } else {
             initialSteps = sharedPref.getInt("initial_steps", -1)
@@ -80,7 +79,6 @@ class StepCounterManager(
         val totalSteps = event.values[0].toInt()
         lastTotalSteps = totalSteps
 
-        // Verificar novamente se mudou de dia (caso o sensor dispare após meia-noite)
         val today = LocalDate.now().toString()
         if (lastResetDate != today) {
             checkAndResetDaily()

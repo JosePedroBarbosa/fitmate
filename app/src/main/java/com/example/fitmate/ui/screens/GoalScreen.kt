@@ -53,8 +53,6 @@ fun GoalScreen() {
 
     LaunchedEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
-        // Removed LocalContext.current access here; use the appContext captured above
-        // val appContext = LocalContext.current.applicationContext
 
         if (uid != null) {
             try {
@@ -114,7 +112,6 @@ fun GoalScreen() {
                         targetMuscleMassPercent = goal.targetMuscleMassPercent
                     )
                 }
-                // salvar no cache em IO usando scope capturado
                 scope.launch(Dispatchers.IO) {
                     try {
                         DatabaseProvider.get(appContext).cachedGoalDao().upsert(entity)
@@ -265,7 +262,6 @@ fun CurrentGoalCard(
     var newValue by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isDeleting by remember { mutableStateOf(false) }
-    // Capture context and scope for cache operations triggered by UI callbacks
     val cardAppContext = LocalContext.current.applicationContext
     val cardScope = rememberCoroutineScope()
 

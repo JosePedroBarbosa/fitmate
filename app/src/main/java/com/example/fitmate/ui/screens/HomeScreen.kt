@@ -60,7 +60,6 @@ fun HomeScreen(navController: NavController) {
     var userProfile by remember { mutableStateOf<UserProfile?>(null) }
     var isLoadingUser by remember { mutableStateOf(true) }
     
-    // Observar LiveData dos passos
     val stepsToday by StepsLiveData.steps.observeAsState(initial = 0)
 
     val context = LocalContext.current

@@ -130,7 +130,6 @@ object FirebaseRepository {
     fun updateUserProfile(userProfile: UserProfile, onComplete: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onComplete(false)
 
-        // Only update profile-related fields; do NOT overwrite points, goal, or workouts
         val updates = mutableMapOf<String, Any?>().apply {
             put("uid", userProfile.uid)
             put("name", userProfile.name)
@@ -142,7 +141,6 @@ object FirebaseRepository {
             put("fitnessLevel", userProfile.fitnessLevel?.label)
         }
 
-        // Remove nulls to avoid unintended deletions unless explicitly provided
         val nonNullUpdates = updates.filterValues { it != null }.mapValues { it.value!! }
 
         database.child("users").child(uid).updateChildren(nonNullUpdates)

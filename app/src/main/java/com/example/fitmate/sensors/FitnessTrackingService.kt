@@ -34,7 +34,6 @@ class FitnessTrackingService : Service() {
 
         stepCounterManager = StepCounterManager(this) { steps ->
             Log.d("FitnessService", "Passos atualizados: $steps")
-            // Atualizar LiveData
             StepsLiveData.updateSteps(steps)
         }
         stepCounterManager?.start()
